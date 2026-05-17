@@ -1119,17 +1119,20 @@ export default function App() {
 
             {/* Right Section: Stats & Settings - Compressed */}
             <div className="flex items-center gap-2 shrink-0">
-              <div className="bg-black/40 backdrop-blur-xl px-4 py-3 md:px-6 md:py-3.5 rounded-xl border border-white/10 flex items-center gap-3 md:gap-4 shadow-xl min-h-[70px] md:min-h-[72px]">
+              <div className="bg-black/40 backdrop-blur-xl px-3 py-2.5 md:px-6 md:py-3.5 rounded-xl border border-white/10 flex items-center gap-2 md:gap-4 shadow-xl min-h-[56px] md:min-h-[72px] max-w-[150px] md:max-w-none">
                 <div className="flex flex-col items-center md:items-end">
-                  <span className="text-3xl md:text-4xl font-black text-white italic leading-none">{officialStats.collected}<span className="text-white/35 text-sm md:text-xl not-italic ml-1">/ {officialStats.total}</span></span>
+                  <span className="text-2xl md:text-4xl font-black text-white italic leading-none whitespace-nowrap">
+                    {officialStats.collected}
+                    <span className="text-white/35 text-[10px] md:text-xl not-italic ml-1">/ {officialStats.total}</span>
+                  </span>
                   <span className="hidden md:block text-[6px] md:text-[8px] font-black text-fifa-accent uppercase tracking-[0.2em] mt-0.5">Figurinhas Coletadas</span>
                 </div>
-                <div className="w-[1px] h-6 md:h-10 bg-white/10" />
+                <div className="w-[1px] h-5 md:h-10 bg-white/10" />
                 <button 
                   onClick={() => setShowSettings(true)}
-                  className="p-4 md:p-3 min-w-12 min-h-12 md:min-w-0 md:min-h-0 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all flex items-center justify-center touch-manipulation"
+                  className="p-3 md:p-3 min-w-10 min-h-10 md:min-w-0 md:min-h-0 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all flex items-center justify-center touch-manipulation"
                 >
-                  <SettingsIcon className="h-5 w-5 md:h-6 md:w-6 group-hover/settings:rotate-90 transition-transform duration-500" />
+                  <SettingsIcon className="h-4 w-4 md:h-6 md:w-6 group-hover/settings:rotate-90 transition-transform duration-500" />
                 </button>
               </div>
             </div>
