@@ -118,7 +118,7 @@ export default function App() {
     return localStorage.getItem('onboarding-dismissed') === 'true';
   });
   const celebrationTriggeredRef = useRef(false);
-  const firstWallpaperPopupSeenRef = useRef(false);
+  const wallpaperUnlockSeenRef = useRef<boolean[]>([false, false, false]);
   const previousOfficialCollectedRef = useRef<number | null>(null);
   const pendingGroupScrollRef = useRef<string | null>(null);
   const groupFirstCountryRefs = useRef<Record<string, HTMLElement | null>>({});
@@ -185,7 +185,9 @@ export default function App() {
   }, [isLoading, tutorialDismissed]);
 
   useEffect(() => {
-    firstWallpaperPopupSeenRef.current = localStorage.getItem('first-wallpaper-unlocked-shown') === 'true';
+    wallpaperUnlockSeenRef.current = [0, 1, 2].map(
+      (index) => localStorage.getItem(`wallpaper-unlock-shown-${index}`) === 'true'
+    );
   }, []);
 
   useEffect(() => {
@@ -243,7 +245,7 @@ export default function App() {
   const [exportPreview, setExportPreview] = useState<{ type: 'missing' | 'duplicates'; stickers: Sticker[] } | null>(null);
   const [showImportModal, setShowImportModal] = useState(false);
   const [importText, setImportText] = useState('');
-  const [showFirstWallpaperUnlock, setShowFirstWallpaperUnlock] = useState(false);
+  const [showWallpaperUnlock, setShowWallpaperUnlock] = useState<number | null>(null);
 
   const scrollToSection = (id: string) => {
     const el = document.getElementById(id);
@@ -328,8 +330,8 @@ export default function App() {
     localStorage.setItem('onboarding-dismissed', 'true');
   };
 
-  const dismissFirstWallpaperUnlock = () => {
-    setShowFirstWallpaperUnlock(false);
+  const dismissWallpaperUnlock = () => {
+    setShowWallpaperUnlock(null);
   };
 
   const reopenTutorial = () => {
@@ -397,9 +399,9 @@ export default function App() {
     void downloadWallpaper(url, `wallpaper-${index + 1}.webp`);
   };
 
-  const openFirstWallpaperDownload = () => {
-    setShowFirstWallpaperUnlock(false);
-    void handleWallpaperAction(loadingImages[0], 0);
+  const openWallpaperDownload = (index: number) => {
+    setShowWallpaperUnlock(null);
+    void handleWallpaperAction(loadingImages[index], index);
   };
 
   useEffect(() => {
@@ -544,14 +546,20 @@ export default function App() {
       return;
     }
 
-    if (
-      !firstWallpaperPopupSeenRef.current &&
-      previousCollected === 0 &&
-      officialStats.collected >= 1
-    ) {
-      firstWallpaperPopupSeenRef.current = true;
-      localStorage.setItem('first-wallpaper-unlocked-shown', 'true');
-      setShowFirstWallpaperUnlock(true);
+    const thresholds = [1, 0.25, 0.5];
+    const progress = officialStats.total > 0 ? officialStats.collected / officialStats.total : 0;
+    const previousProgress = officialStats.total > 0 ? previousCollected / officialStats.total : 0;
+
+    const nextUnlockIndex = thresholds.findIndex((required, index) => {
+      const unlockedNow = index === 0 ? officialStats.collected >= 1 : progress >= required;
+      const unlockedBefore = index === 0 ? previousCollected >= 1 : previousProgress >= required;
+      return !wallpaperUnlockSeenRef.current[index] && unlockedNow && !unlockedBefore;
+    });
+
+    if (nextUnlockIndex !== -1) {
+      wallpaperUnlockSeenRef.current[nextUnlockIndex] = true;
+      localStorage.setItem(`wallpaper-unlock-shown-${nextUnlockIndex}`, 'true');
+      setShowWallpaperUnlock(nextUnlockIndex);
     }
 
     previousOfficialCollectedRef.current = officialStats.collected;
@@ -1542,13 +1550,13 @@ export default function App() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {showFirstWallpaperUnlock && (
+        {showWallpaperUnlock !== null && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-8">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={dismissFirstWallpaperUnlock}
+              onClick={dismissWallpaperUnlock}
               className="absolute inset-0 bg-black/75 backdrop-blur-xl"
             />
             <motion.div
@@ -1563,15 +1571,15 @@ export default function App() {
                   <div className="space-y-2">
                     <p className="text-[10px] font-black uppercase tracking-[0.3em] text-fifa-primary/35">Recompensa liberada</p>
                     <h3 className="text-2xl md:text-3xl font-black text-fifa-primary uppercase tracking-tight">
-                      Primeiro wallpaper desbloqueado
+                      Wallpaper {showWallpaperUnlock + 1} desbloqueado
                     </h3>
                     <p className="text-sm md:text-base font-medium text-fifa-primary/65 max-w-xl">
-                      Você cadastrou sua primeira figurinha e liberou o primeiro wallpaper da coleção.
+                      Você atingiu a meta de desbloqueio e liberou um novo wallpaper da coleção.
                     </p>
                   </div>
                   <button
                     type="button"
-                    onClick={dismissFirstWallpaperUnlock}
+                    onClick={dismissWallpaperUnlock}
                     className="p-2 hover:bg-fifa-slate-100 rounded-full transition-colors"
                     aria-label="Fechar aviso de wallpaper"
                   >
@@ -1583,7 +1591,7 @@ export default function App() {
                   <div className="rounded-[1.75rem] border border-fifa-slate-100 bg-fifa-slate-50 p-4">
                     <div className="overflow-hidden rounded-[1.35rem] bg-white shadow-sm">
                       <img
-                        src={loadingImages[0]}
+                        src={loadingImages[showWallpaperUnlock]}
                         alt="Wallpaper desbloqueado"
                         className="h-44 w-full object-cover"
                       />
@@ -1594,21 +1602,21 @@ export default function App() {
                     <div className="rounded-[1.5rem] border border-[#009b3a]/15 bg-[#009b3a]/8 p-4">
                       <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#009b3a]">Liberado agora</p>
                       <p className="mt-2 text-sm md:text-base font-semibold leading-relaxed text-fifa-primary/75">
-                        Baixe o wallpaper 1 para comemorar o início da coleção.
+                        Baixe o wallpaper {showWallpaperUnlock + 1} para celebrar o avanço da coleção.
                       </p>
                     </div>
 
                     <div className="flex flex-col md:flex-row gap-3 md:justify-end">
                       <button
                         type="button"
-                        onClick={dismissFirstWallpaperUnlock}
+                        onClick={dismissWallpaperUnlock}
                         className="rounded-2xl border border-fifa-slate-200 px-5 py-3 text-sm font-black uppercase tracking-widest text-fifa-primary hover:bg-fifa-slate-50 transition-colors"
                       >
                         Depois
                       </button>
                       <button
                         type="button"
-                        onClick={openFirstWallpaperDownload}
+                        onClick={() => openWallpaperDownload(showWallpaperUnlock)}
                         className="rounded-2xl bg-fifa-primary px-5 py-3 text-sm font-black uppercase tracking-widest text-white shadow-lg shadow-fifa-primary/20 transition-transform active:scale-95"
                       >
                         Baixar wallpaper
