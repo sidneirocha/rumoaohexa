@@ -1055,15 +1055,29 @@ export default function App() {
 
                 <div className="mt-6 grid gap-3 md:grid-cols-2">
                   {[
-                    { title: '1. Busque', text: 'Use a barra de busca para encontrar seleções, jogadores ou códigos rapidamente.' },
-                    { title: '2. Marque figurinhas', text: 'Toque em uma figurinha para adicionar e toque de novo para remover.' },
-                    { title: '3. Filtre', text: 'Use Faltantes, Trocas e Ver todas para navegar pela coleção.' },
-                    { title: '4. Salve', text: 'Copiar MD gera um resumo fácil de compartilhar e importar de novo depois.' },
+                    { title: '1. Busque', text: 'Use a barra de busca para encontrar seleções, jogadores ou códigos rapidamente.', accent: 'from-[#002772] to-[#1b4fb8]', icon: Search },
+                    { title: '2. Adicione', text: 'Toque em uma figurinha para aumentar a coleção. Toque de novo para criar repetidas.', accent: 'from-[#009b3a] to-[#2cbf6e]', icon: Trophy },
+                    { title: '3. Filtre', text: 'Use Faltantes, Trocas e Ver todas para navegar pela coleção com mais velocidade.', accent: 'from-[#fedf00] to-[#f5b800]', icon: Filter },
+                    { title: '4. Backup', text: 'Copiar backup gera um texto fácil de compartilhar e importar de novo depois.', accent: 'from-[#8b0000] to-[#d1004d]', icon: Copy },
                   ].map((step) => (
-                    <div key={step.title} className="rounded-2xl border border-fifa-slate-100 bg-fifa-slate-50 px-4 py-4">
-                      <p className="text-[10px] font-black uppercase tracking-[0.25em] text-fifa-primary/35">{step.title}</p>
-                      <p className="mt-2 text-sm md:text-[15px] font-semibold leading-relaxed text-fifa-primary/70">{step.text}</p>
-                    </div>
+                    <motion.div
+                      key={step.title}
+                      initial={{ opacity: 0, y: 14 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.35 }}
+                      className="relative overflow-hidden rounded-2xl border border-fifa-slate-100 bg-fifa-slate-50 px-4 py-4"
+                    >
+                      <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${step.accent}`} />
+                      <div className="flex items-start gap-3">
+                        <div className={`shrink-0 h-11 w-11 rounded-2xl bg-gradient-to-br ${step.accent} flex items-center justify-center text-white shadow-lg`}>
+                          <step.icon className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-fifa-primary/35">{step.title}</p>
+                          <p className="mt-2 text-sm md:text-[15px] font-semibold leading-relaxed text-fifa-primary/70">{step.text}</p>
+                        </div>
+                      </div>
+                    </motion.div>
                   ))}
                 </div>
 
