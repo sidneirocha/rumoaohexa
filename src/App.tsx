@@ -497,30 +497,6 @@ export default function App() {
     showToast(`PDF de ${type === 'missing' ? 'faltantes' : 'repetidas'} gerado!`);
   };
 
-  const exportData = () => {
-    const snapshot = {
-      app: 'Stickers Copa 26',
-      version: '1.2',
-      timestamp: new Date().toISOString(),
-      stats,
-      collection: allStickers.reduce<Record<string, boolean>>((acc, sticker) => {
-        acc[sticker.id] = (collection[sticker.id] || 0) > 0;
-        return acc;
-      }, {}),
-    };
-
-    const dataStr = JSON.stringify(snapshot, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    
-    const exportFileDefaultName = `colecao-copa-2026-${new Date().toISOString().split('T')[0]}.json`;
-    
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
-    showToast("Dados exportados com sucesso!");
-  };
-
   const exportMarkdownData = () => {
     const items = Object.entries(sanitizeCollection(collection));
     if (items.length === 0) {
@@ -1082,7 +1058,7 @@ export default function App() {
                     { title: '1. Busque', text: 'Use a barra de busca para encontrar seleções, jogadores ou códigos rapidamente.' },
                     { title: '2. Marque figurinhas', text: 'Toque em uma figurinha para adicionar e toque de novo para remover.' },
                     { title: '3. Filtre', text: 'Use Faltantes, Trocas e Ver todas para navegar pela coleção.' },
-                    { title: '4. Salve', text: 'Exportar JSON faz backup, Copiar MD gera um resumo fácil de compartilhar.' },
+                    { title: '4. Salve', text: 'Copiar MD gera um resumo fácil de compartilhar e importar de novo depois.' },
                   ].map((step) => (
                     <div key={step.title} className="rounded-2xl border border-fifa-slate-100 bg-fifa-slate-50 px-4 py-4">
                       <p className="text-[10px] font-black uppercase tracking-[0.25em] text-fifa-primary/35">{step.title}</p>
@@ -1275,16 +1251,7 @@ export default function App() {
                 <div className="space-y-6">
                 <div>
                   <h4 className="text-[10px] font-black uppercase text-fifa-primary/40 tracking-[0.2em] mb-4">Sincronização Cloud</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <button 
-                      onClick={exportData}
-                      className="flex flex-col items-center justify-center gap-3 py-6 bg-fifa-slate-50 border-2 border-fifa-slate-100 rounded-2xl hover:border-fifa-primary transition-all group"
-                    >
-                      <div className="p-3 bg-white rounded-xl shadow-sm group-hover:bg-fifa-primary group-hover:text-white transition-colors">
-                        <Share2 className="h-5 w-5" />
-                      </div>
-                      <span className="text-[10px] font-black uppercase tracking-widest">Exportar JSON</span>
-                    </button>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <button 
                       onClick={exportMarkdownData}
                       className="flex flex-col items-center justify-center gap-3 py-6 bg-fifa-slate-50 border-2 border-fifa-slate-100 rounded-2xl hover:border-fifa-primary transition-all group"
