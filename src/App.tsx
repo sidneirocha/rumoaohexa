@@ -114,6 +114,7 @@ export default function App() {
     if (typeof window === 'undefined') return false;
     return localStorage.getItem('onboarding-dismissed') === 'true';
   });
+  const firstCountryRefs = React.useRef<Record<string, HTMLDivElement | null>>({});
 
   const LOADING_IMAGES = [
     "https://raw.githubusercontent.com/sidneirocha/stickerscopa26/99fab2db99f5941e3a573be4c30def3eedbb17d8/wp1.webp",
@@ -131,6 +132,11 @@ export default function App() {
   const isStandalone = useMemo(() => {
     if (typeof window === 'undefined') return false;
     return window.matchMedia('(display-mode: standalone)').matches || (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+  }, []);
+
+  const isMobile = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(max-width: 767px)').matches;
   }, []);
 
   useEffect(() => {
@@ -237,6 +243,18 @@ export default function App() {
       } else if (id === 'legends') {
         setActiveGroup(LEGENDS_PLAYERS[0].code);
       }
+    }
+  };
+
+  const openGroup = (groupName: string) => {
+    const nextGroup = activeGroup === groupName ? null : groupName;
+    setActiveGroup(nextGroup);
+
+    if (nextGroup && isMobile) {
+      window.setTimeout(() => {
+        const target = firstCountryRefs.current[groupName];
+        target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 120);
     }
   };
 
@@ -850,7 +868,7 @@ export default function App() {
                       subtitle={`${collectedCount} DE ${totalCount}`}
                       duplicates={duplicateCount}
                       isOpen={activeGroup === special.code}
-                      onToggle={() => setActiveGroup(activeGroup === special.code ? null : special.code)}
+                      onToggle={() => openGroup(special.code)}
                     >
                       <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-5 gap-2 p-3 md:p-4 bg-white rounded-b-3xl md:border-x md:border-b border-fifa-slate-200">
                         {stickers.map(s => (
@@ -899,7 +917,7 @@ export default function App() {
                         title={player.name}
                         subtitle={`${collectedCount} DE ${totalCount}`}
                         isOpen={activeGroup === player.code}
-                        onToggle={() => setActiveGroup(activeGroup === player.code ? null : player.code)}
+                        onToggle={() => openGroup(player.code)}
                       >
                         <div className="grid grid-cols-4 gap-2 p-3 md:p-4 bg-white rounded-b-3xl md:border-x md:border-b border-fifa-slate-200">
                           {stickers.map(s => (
@@ -931,6 +949,7 @@ export default function App() {
                 const duplicateCount = groupStickers.reduce((acc, s) => acc + Math.max(0, (collection[s.id] || 0) - 1), 0);
 
                 const groupFlags = group.teams.map(t => FIFA_TO_ISO[t.code]);
+                let firstVisibleTeamAttached = false;
 
                 return (
                   <div key={group.name} id={`grupo-${group.name.toLowerCase()}`} className="space-y-4">
@@ -940,7 +959,7 @@ export default function App() {
                       duplicates={duplicateCount}
                       flags={groupFlags}
                       isOpen={activeGroup === group.name}
-                      onToggle={() => setActiveGroup(activeGroup === group.name ? null : group.name)}
+                      onToggle={() => openGroup(group.name)}
                     >
                       <div className="space-y-8 p-4 md:p-6 bg-white rounded-b-3xl md:border-x md:border-b border-fifa-slate-200">
                         <div className="grid grid-cols-1 md:grid-cols-1 gap-8">
@@ -949,7 +968,16 @@ export default function App() {
                             if (teamStickers.length === 0 && filter !== 'all') return null;
 
                             return (
-                              <div key={team.code} className="space-y-4">
+                              <div
+                                key={team.code}
+                                className="space-y-4"
+                                ref={(el) => {
+                                  if (!firstVisibleTeamAttached) {
+                                    firstCountryRefs.current[group.name] = el;
+                                    firstVisibleTeamAttached = true;
+                                  }
+                                }}
+                              >
                                 <div className="flex items-center justify-between border-b border-fifa-slate-100 pb-2">
                                   <div className="flex items-center gap-3">
                                     <div className="flex items-center gap-2">
