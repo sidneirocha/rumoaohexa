@@ -474,7 +474,7 @@ export default function App() {
     return { relevant, grouped, totalDisplay };
   };
 
-  const getTradeMessage = (type: 'missing' | 'duplicates') => {
+  const getTradeMessage = (type: 'missing' | 'duplicates', includeSourceLink = false) => {
     const { grouped, totalDisplay } = buildTradeEntries(type);
     const header = type === 'missing' ? 'Lista de Faltantes' : 'Lista de Trocas';
     const lines = [
@@ -485,6 +485,10 @@ export default function App() {
         `${entry.teamName}${entry.flag ? ` (${entry.teamCode})` : ''}: ${entry.labels.join(', ')}`,
       ]),
     ];
+
+    if (includeSourceLink) {
+      lines.push('', 'Fonte do app: https://sidneirocha.github.io/stickerscopa26');
+    }
 
     return lines.join('\n');
   };
@@ -512,7 +516,7 @@ export default function App() {
   };
 
   const openTradeListWhatsApp = (type: 'missing' | 'duplicates') => {
-    const message = getTradeMessage(type);
+    const message = getTradeMessage(type, true);
     const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank', 'noopener,noreferrer');
     showToast('Abrindo lista no WhatsApp.');
@@ -597,9 +601,9 @@ export default function App() {
           document.execCommand('copy');
           textarea.remove();
         }
-        showToast("Markdown copiado com sucesso. Agora é só colar onde quiser.");
+        showToast("Backup copiado com sucesso. Agora é só colar onde quiser.");
       } catch {
-        showToast("Não foi possível copiar o Markdown.");
+        showToast("Não foi possível copiar o backup.");
       }
     };
 
@@ -624,7 +628,7 @@ export default function App() {
 
   const confirmImportText = () => {
     if (!importedPreview) {
-      showToast("Cole um JSON, MD ou TXT válido antes de importar.");
+      showToast("Cole um backup, MD ou TXT válido antes de importar.");
       return;
     }
 
@@ -1279,7 +1283,7 @@ export default function App() {
               </div>
 
               <div className="p-6 md:p-8 border-t border-fifa-slate-100 bg-white">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
                     onClick={() => copyTradeList(exportPreview.type)}
@@ -1287,14 +1291,6 @@ export default function App() {
                   >
                     <Copy className="h-5 w-5" />
                     Copiar lista
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => openTradeListWhatsApp(exportPreview.type)}
-                    className="w-full py-4 bg-[#25D366] text-white rounded-2xl font-black uppercase italic tracking-widest shadow-xl hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-3"
-                  >
-                    <MessageCircleMore className="h-5 w-5" />
-                    WhatsApp
                   </button>
                   <button 
                     onClick={() => {
@@ -1304,7 +1300,15 @@ export default function App() {
                     className="w-full py-4 bg-fifa-accent text-fifa-primary rounded-2xl font-black uppercase italic tracking-widest shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3"
                   >
                     <Trophy className="h-5 w-5" />
-                    {exportPreview.type === 'missing' ? 'Download Lista Faltantes' : 'Download Lista Trocas'}
+                    Download
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openTradeListWhatsApp(exportPreview.type)}
+                    className="w-full py-4 bg-[#25D366] text-white rounded-2xl font-black uppercase italic tracking-widest shadow-xl hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-3 col-span-2"
+                  >
+                    <MessageCircleMore className="h-5 w-5" />
+                    WhatsApp
                   </button>
                 </div>
               </div>
@@ -1350,7 +1354,7 @@ export default function App() {
                 <div className="space-y-6">
                 <div>
                   <h4 className="text-[10px] font-black uppercase text-fifa-primary/40 tracking-[0.2em] mb-4">Sincronização Cloud</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-3">
                     <button 
                       onClick={exportMarkdownData}
                       className="flex flex-col items-center justify-center gap-3 py-6 bg-fifa-slate-50 border-2 border-fifa-slate-100 rounded-2xl hover:border-fifa-primary transition-all group"
@@ -1358,7 +1362,7 @@ export default function App() {
                       <div className="p-3 bg-white rounded-xl shadow-sm group-hover:bg-fifa-primary group-hover:text-white transition-colors">
                         <Share2 className="h-5 w-5" />
                       </div>
-                      <span className="text-[10px] font-black uppercase tracking-widest">Copiar MD</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest">Backup</span>
                     </button>
                     <button 
                       onClick={openImportModal}
@@ -1400,7 +1404,17 @@ export default function App() {
                 </div>
 
                 <div className="pt-6 border-t border-fifa-slate-100">
-                   <p className="text-[10px] text-fifa-primary/40 font-bold text-center uppercase tracking-widest">Controlador Oficial do Álbum da Copa 2026</p>
+                  <p className="text-[10px] text-fifa-primary/40 font-bold text-center uppercase tracking-widest">
+                    Criado por:
+                    <a
+                      href="https://github.com/sidneirocha"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="ml-1 text-fifa-primary/60 hover:text-fifa-primary underline underline-offset-4 normal-case tracking-normal"
+                    >
+                      github.com/sidneirocha
+                    </a>
+                  </p>
                 </div>
               </div>
             </motion.div>
@@ -1428,9 +1442,9 @@ export default function App() {
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-[0.3em] text-fifa-primary/35">Importar coleção</p>
-                    <h3 className="mt-2 text-xl md:text-2xl font-black text-fifa-primary uppercase tracking-tight">Cole o texto do MD</h3>
+                    <h3 className="mt-2 text-xl md:text-2xl font-black text-fifa-primary uppercase tracking-tight">Cole o texto do backup</h3>
                     <p className="mt-2 text-sm text-fifa-primary/55">
-                      Você pode colar o Markdown, JSON ou TXT exportado. O app mostra a quantidade encontrada antes de confirmar.
+                      Você pode colar o backup, MD ou TXT exportado. O app mostra a quantidade encontrada antes de confirmar.
                     </p>
                   </div>
                   <button
@@ -1470,7 +1484,7 @@ export default function App() {
 
                   {importText.trim() && !importedPreview && (
                     <p className="text-sm font-bold text-red-600">
-                      Não reconheci esse texto. Cole um MD/JSON/TXT exportado pelo app.
+                      Não reconheci esse texto. Cole um backup, MD ou TXT exportado pelo app.
                     </p>
                   )}
                 </div>
