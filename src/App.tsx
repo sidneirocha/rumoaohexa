@@ -476,9 +476,9 @@ export default function App() {
 
   const getTradeMessage = (type: 'missing' | 'duplicates', includeSourceLink = false) => {
     const { grouped, totalDisplay } = buildTradeEntries(type);
-    const header = type === 'missing' ? 'Lista de Faltantes' : 'Lista de Trocas';
+    const header = type === 'missing' ? 'lista de faltantes' : 'lista de trocas';
     const lines = [
-      `${header} - Stickers Copa 26`,
+      `Olá, essa é a minha ${header} - Stickers Copa 26`,
       `Total: ${totalDisplay} ${type === 'missing' ? 'figurinhas' : 'repetidas'}`,
       '',
       ...grouped.flatMap((entry) => [
@@ -487,14 +487,14 @@ export default function App() {
     ];
 
     if (includeSourceLink) {
-      lines.push('', 'Fonte do app: https://sidneirocha.github.io/stickerscopa26');
+      lines.push('', 'Dados de: https://sidneirocha.github.io/stickerscopa26');
     }
 
     return lines.join('\n');
   };
 
   const copyTradeList = async (type: 'missing' | 'duplicates') => {
-    const message = getTradeMessage(type);
+    const message = getTradeMessage(type, true);
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(message);
