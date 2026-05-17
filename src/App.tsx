@@ -112,11 +112,14 @@ export default function App() {
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialSlide, setTutorialSlide] = useState(0);
   const [showCompletionCelebration, setShowCompletionCelebration] = useState(false);
+  const [toastTone, setToastTone] = useState<'default' | 'warning' | 'success'>('default');
   const [tutorialDismissed, setTutorialDismissed] = useState(() => {
     if (typeof window === 'undefined') return false;
     return localStorage.getItem('onboarding-dismissed') === 'true';
   });
   const celebrationTriggeredRef = useRef(false);
+  const pendingGroupScrollRef = useRef<string | null>(null);
+  const groupFirstCountryRefs = useRef<Record<string, HTMLElement | null>>({});
 
   const LOADING_IMAGES = [
     "https://raw.githubusercontent.com/sidneirocha/stickerscopa26/99fab2db99f5941e3a573be4c30def3eedbb17d8/wp1.webp",
@@ -256,17 +259,34 @@ export default function App() {
 
   const openGroup = (groupName: string) => {
     const nextGroup = activeGroup === groupName ? null : groupName;
+    pendingGroupScrollRef.current = nextGroup;
     setActiveGroup(nextGroup);
-
-    if (nextGroup && isMobile) {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          const target = document.querySelector(`[data-first-country="${groupName}"]`) as HTMLElement | null;
-          target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        });
-      });
-    }
   };
+
+  useEffect(() => {
+    const groupName = pendingGroupScrollRef.current;
+    if (!groupName || !isMobile || activeGroup !== groupName) return;
+
+    const timer = window.setTimeout(() => {
+      const target = groupFirstCountryRefs.current[groupName];
+      if (target) {
+        const headerOffset = (document.querySelector('header')?.getBoundingClientRect().height ?? 0) + 12;
+        const top = target.getBoundingClientRect().top + window.scrollY - headerOffset;
+        window.scrollTo({ top, behavior: 'smooth' });
+
+        window.setTimeout(() => {
+          const retryTarget = groupFirstCountryRefs.current[groupName];
+          if (retryTarget) {
+            const retryTop = retryTarget.getBoundingClientRect().top + window.scrollY - headerOffset;
+            window.scrollTo({ top: retryTop, behavior: 'smooth' });
+          }
+        }, 250);
+      }
+      pendingGroupScrollRef.current = null;
+    }, 650);
+
+    return () => window.clearTimeout(timer);
+  }, [activeGroup, isMobile, filter, searchQuery]);
 
   const prepareExport = (type: 'missing' | 'duplicates') => {
     const relevant = type === 'missing' 
@@ -281,7 +301,8 @@ export default function App() {
     setExportPreview({ type, stickers: relevant });
   };
 
-  const showToast = (msg: string) => {
+  const showToast = (msg: string, tone: 'default' | 'warning' | 'success' = 'default') => {
+    setToastTone(tone);
     setToastMessage(msg);
     setShowShareToast(true);
     setTimeout(() => setShowShareToast(false), 2000);
@@ -357,11 +378,11 @@ export default function App() {
 
     if (!unlocked) {
       const requiredText = index === 0 ? '1 figurinha' : `${Math.round(required * 100)}%`;
-      showToast(`Wallpaper bloqueado. Libera em ${requiredText}.`);
+      showToast(`ALERTA: wallpaper bloqueado. Libera em ${requiredText}.`, 'warning');
       return;
     }
 
-    showToast(`Baixando wallpaper ${index + 1}...`);
+    showToast(`Baixando wallpaper ${index + 1}...`, 'success');
     void downloadWallpaper(url, `wallpaper-${index + 1}.webp`);
   };
 
@@ -729,10 +750,14 @@ export default function App() {
       result = result.filter((s) => {
         const fullCode = `${s.teamCode}${s.number}`.toLowerCase();
         const codeWithSpace = `${s.teamCode} ${s.number}`.toLowerCase();
+        const name = s.teamName.toLowerCase();
+        const variant = (s.variant || '').toLowerCase();
         return (
-          fullCode.startsWith(query) || 
-          codeWithSpace.startsWith(query) ||
-          s.teamCode.toLowerCase().startsWith(query) ||
+          fullCode.includes(query) || 
+          codeWithSpace.includes(query) ||
+          s.teamCode.toLowerCase().includes(query) ||
+          name.includes(query) ||
+          variant.includes(query) ||
           s.number === query
         );
       });
@@ -750,12 +775,12 @@ export default function App() {
   const tutorialSlides = [
     {
       title: 'Busque',
-      description: 'Use a busca e os filtros rápidos para localizar seleções, jogadores ou códigos sem perder tempo.',
+      description: 'Veja o fluxo principal em um carrossel rápido, com prints simulados do aplicativo em cada etapa.',
       accent: 'from-[#002772] to-[#1b4fb8]',
     },
     {
       title: 'Adicione',
-      description: 'Toque em uma figurinha para cadastrar sua coleção e toque de novo para criar repetidas.',
+      description: 'Toque em uma figurinha para cadastrar sua coleção e toque de novo para criar repetidas. O contador sobe junto.',
       accent: 'from-[#009b3a] to-[#2cbf6e]',
     },
     {
@@ -765,7 +790,7 @@ export default function App() {
     },
     {
       title: 'Recompensas',
-      description: 'À medida que você avança, os wallpapers vão sendo liberados e o álbum chega ao fim com festa.',
+      description: 'À medida que você avança, os wallpapers vão sendo desbloqueados e o álbum termina em clima de festa.',
       accent: 'from-[#fedf00] to-[#f5b800]',
     },
   ];
@@ -847,7 +872,19 @@ export default function App() {
                     </div>
                   ))}
                 </div>
-                <p className="mt-3 text-[10px] font-semibold text-fifa-primary/60">Toque uma vez para adicionar. Toque novamente para criar repetidas.</p>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <div className="rounded-xl bg-fifa-slate-50 border border-fifa-slate-100 p-2">
+                    <p className="text-[9px] font-black uppercase tracking-[0.25em] text-fifa-primary/35">Toque 1</p>
+                    <p className="mt-1 text-[10px] font-semibold text-fifa-primary/60">Adiciona a figurinha na coleção.</p>
+                  </div>
+                  <div className="rounded-xl bg-[#002772]/5 border border-[#002772]/10 p-2">
+                    <p className="text-[9px] font-black uppercase tracking-[0.25em] text-[#002772]">Toque 2</p>
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="rounded-full bg-[#002772] px-2 py-0.5 text-[9px] font-black uppercase text-white">x2</span>
+                      <p className="text-[10px] font-semibold text-fifa-primary/60">Cria repetidas e aumenta o contador.</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -872,7 +909,7 @@ export default function App() {
             <div className="p-4 space-y-3 bg-fifa-slate-50">
               <div className="rounded-2xl bg-white border border-fifa-slate-100 p-3">
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-fifa-primary/35">Dica importante</p>
-                <div className="mt-3 rounded-xl bg-fifa-primary/5 border border-fifa-primary/10 p-3 text-sm font-semibold text-fifa-primary/70">
+                <div className="mt-3 rounded-xl border border-[#8b0000]/15 bg-[#8b0000]/6 p-3 text-sm font-black leading-relaxed text-[#8b0000] shadow-sm">
                   Antes de limpar a memória cache do navegador, faça um backup da coleção.
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2">
@@ -918,7 +955,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-fifa-slate-50 pb-20 font-sans text-fifa-primary">
+    <div className="min-h-screen bg-fifa-slate-50 pb-36 md:pb-20 font-sans text-fifa-primary">
       <AnimatePresence mode="wait">
         {isLoading ? (
           <motion.div
@@ -992,35 +1029,37 @@ export default function App() {
           <div className="absolute top-0 right-0 w-[25%] h-[50%] bg-[#fedf00] rounded-bl-[80px] translate-x-1/3 -translate-y-6" />
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 md:px-6 py-2 md:py-4">
-          <div className="flex flex-row items-center justify-between gap-4 md:gap-8">
+        <div className="relative max-w-7xl mx-auto px-4 md:px-6 py-3 md:py-5">
+          <div className="flex flex-row items-center justify-between gap-4 md:gap-10">
             {/* Left Section: Logo & Brand on one line */}
-            <div className="flex items-center gap-2 md:gap-4 min-w-0">
+            <div className="flex items-center gap-3 md:gap-5 min-w-0">
               <img 
                 src="https://upload.wikimedia.org/wikipedia/en/1/17/2026_FIFA_World_Cup_emblem.svg" 
                 alt="Logo" 
-                className="h-11 md:h-16 w-auto drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] shrink-0"
+                className="h-20 md:h-20 w-auto drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] shrink-0"
               />
-              <div className="flex flex-row items-baseline gap-1.5 md:gap-2">
-                <h1 className="text-sm md:text-3xl font-black uppercase italic leading-none tracking-tighter whitespace-nowrap">
+              <div className="flex flex-col md:flex-row md:items-baseline gap-0 md:gap-2">
+                <h1 className="text-2xl md:text-4xl font-black uppercase italic leading-none tracking-tighter whitespace-nowrap">
                   COPA <span className="text-fifa-accent">2026</span>
                 </h1>
-                <p className="hidden md:block text-[8px] md:text-[10px] font-bold text-white/40 uppercase tracking-[0.2em]">Álbum Digital</p>
+                <p className="mt-0.5 md:mt-0 text-[9px] md:text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] whitespace-nowrap">
+                  Álbum Digital
+                </p>
               </div>
             </div>
 
-            {/* Middle Section: Search Bar - Filling the space on Desktop */}
+            {/* Middle Section: Search Bar - Desktop */}
             <div className="hidden md:block flex-1 max-w-2xl group mx-4">
               <div className="flex items-center gap-2">
                 <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30 group-focus-within:text-fifa-accent transition-colors" />
-                <input
-                  type="text"
-                  placeholder="Busque por times ou jogadores..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-3 text-sm font-bold italic focus:outline-none focus:ring-2 focus:ring-fifa-accent/30 transition-all placeholder:text-white/20 hover:bg-white/10"
-                />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30 group-focus-within:text-fifa-accent transition-colors" />
+                  <input
+                    type="text"
+                    placeholder="Busque por times ou jogadores..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-3 text-sm font-bold italic focus:outline-none focus:ring-2 focus:ring-fifa-accent/30 transition-all placeholder:text-white/20 hover:bg-white/10"
+                  />
                 </div>
                 {searchQuery.trim() && (
                   <button
@@ -1036,46 +1075,23 @@ export default function App() {
 
             {/* Right Section: Stats & Settings - Compressed */}
             <div className="flex items-center gap-2 shrink-0">
-              <div className="bg-black/40 backdrop-blur-xl px-2.5 py-1.5 md:px-6 md:py-3 rounded-xl border border-white/10 flex items-center gap-2 md:gap-4 shadow-xl">
+              <div className="bg-black/40 backdrop-blur-xl px-4 py-3 md:px-6 md:py-3.5 rounded-xl border border-white/10 flex items-center gap-3 md:gap-4 shadow-xl min-h-[70px] md:min-h-[72px]">
                 <div className="flex flex-col items-center md:items-end">
-                  <span className="text-xs md:text-3xl font-black text-white italic leading-none">{officialStats.collected}<span className="text-white/30 text-[8px] md:text-lg not-italic ml-1">/ {officialStats.total}</span></span>
+                  <span className="text-3xl md:text-4xl font-black text-white italic leading-none">{officialStats.collected}<span className="text-white/35 text-sm md:text-xl not-italic ml-1">/ {officialStats.total}</span></span>
                   <span className="hidden md:block text-[6px] md:text-[8px] font-black text-fifa-accent uppercase tracking-[0.2em] mt-0.5">Figurinhas Coletadas</span>
                 </div>
-                <div className="w-[1px] h-4 md:h-10 bg-white/10" />
+                <div className="w-[1px] h-6 md:h-10 bg-white/10" />
                 <button 
                   onClick={() => setShowSettings(true)}
-                  className="p-3 md:p-2.5 min-w-11 min-h-11 md:min-w-0 md:min-h-0 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all flex items-center justify-center touch-manipulation"
+                  className="p-4 md:p-3 min-w-12 min-h-12 md:min-w-0 md:min-h-0 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all flex items-center justify-center touch-manipulation"
                 >
-                  <SettingsIcon className="h-3.5 w-3.5 md:h-6 md:w-6 group-hover/settings:rotate-90 transition-transform duration-500" />
+                  <SettingsIcon className="h-5 w-5 md:h-6 md:w-6 group-hover/settings:rotate-90 transition-transform duration-500" />
                 </button>
               </div>
             </div>
           </div>
 
           <div className="mt-3 md:mt-4 flex flex-col md:flex-row items-center gap-3">
-            {/* Mobile Search */}
-            <div className="md:hidden flex items-center gap-2 w-full">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/30" />
-                <input
-                  type="text"
-                  placeholder="Busque..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-white/10 border border-white/10 rounded-xl py-2 pl-10 pr-3 text-xs font-bold italic focus:outline-none transition-all placeholder:text-white/20"
-                />
-              </div>
-              {searchQuery.trim() && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="shrink-0 rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white hover:bg-white/20 transition-colors"
-                >
-                  Limpar
-                </button>
-              )}
-            </div>
-
             <nav className="flex items-center justify-center gap-1.5 md:gap-2 w-full md:w-auto">
               <NavButton label="Especiais" onClick={() => scrollToSection('especiais')} />
               <NavButton label="Legends" onClick={() => scrollToSection('legends')} />
@@ -1102,7 +1118,7 @@ export default function App() {
         </div>
 
         {/* Global Progress Strip */}
-        <div className="h-6 md:h-8 w-full bg-black/40 relative overflow-hidden flex items-center">
+        <div className="h-8 md:h-10 w-full bg-black/40 relative overflow-hidden flex items-center">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${officialStats.percentage}%` }}
@@ -1199,17 +1215,17 @@ export default function App() {
             <div className="lg:col-span-2 xl:col-span-3 space-y-12">
               {/* Legends Section Spanning Horizontal */}
               <div id="legends" className="space-y-6">
-                <div className="bg-gradient-to-r from-[#6e001c] via-[#8b0000] to-[#6a0dad] rounded-3xl p-6 md:p-8 text-white shadow-xl overflow-hidden relative">
-                  <div className="absolute top-0 right-0 w-64 h-full bg-fifa-accent rounded-full translate-x-1/2 opacity-10 blur-3xl" />
-                  <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                      <h2 className="text-2xl md:text-3xl font-black uppercase leading-tight italic">Legends Extra</h2>
-                    </div>
-                    <div className="bg-white/20 px-4 py-2 rounded-2xl text-xs md:text-sm font-black backdrop-blur-md border border-white/10 italic self-start md:self-auto">
-                      {allStickers.filter(s => s.teamCode === 'EXTRA' && (collection[s.id] || 0) > 0).length} / 80 COLETADAS
-                    </div>
+              <div className="bg-gradient-to-r from-[#6e001c] via-[#8b0000] to-[#6a0dad] rounded-3xl p-6 md:p-8 text-white shadow-xl overflow-hidden relative">
+                <div className="absolute top-0 right-0 w-64 h-full bg-fifa-accent rounded-full translate-x-1/2 opacity-10 blur-3xl" />
+                <div className="relative z-10 flex items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-2xl md:text-3xl font-black uppercase leading-tight italic">Legends Extra</h2>
+                  </div>
+                  <div className="bg-white/20 px-3 py-1.5 rounded-2xl text-[10px] md:text-xs font-black backdrop-blur-md border border-white/10 italic shrink-0 whitespace-nowrap">
+                    {allStickers.filter(s => s.teamCode === 'EXTRA' && (collection[s.id] || 0) > 0).length} / 80
                   </div>
                 </div>
+              </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {LEGENDS_PLAYERS.map(player => {
@@ -1283,8 +1299,10 @@ export default function App() {
                             return (
                               <div
                                 key={team.code}
-                                className="space-y-4"
-                                data-first-country={isFirstVisibleTeam ? group.name : undefined}
+                                className="space-y-4 scroll-mt-44 md:scroll-mt-52"
+                                ref={isFirstVisibleTeam ? (node) => {
+                                  groupFirstCountryRefs.current[group.name] = node;
+                                } : undefined}
                               >
                                 <div className="flex items-center justify-between border-b border-fifa-slate-100 pb-2">
                                   <div className="flex items-center gap-3">
@@ -1325,7 +1343,41 @@ export default function App() {
           </div>
         </div>
       )}
-    </main>
+      </main>
+
+      <AnimatePresence>
+        <motion.div
+          initial={{ y: 80, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 80, opacity: 0 }}
+          transition={{ duration: 0.25, ease: 'easeOut' }}
+          className="fixed bottom-4 left-4 right-4 z-[140] md:hidden pointer-events-none"
+        >
+          <div className="pointer-events-auto mx-auto flex max-w-2xl items-center gap-2 rounded-2xl border border-white/10 bg-[#002772]/95 px-3 py-3 text-white shadow-2xl backdrop-blur-xl">
+            <Search className="h-4 w-4 shrink-0 text-white/40" />
+            <input
+              type="text"
+              placeholder="Busque por times, jogadores ou códigos..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="min-w-0 flex-1 bg-transparent text-xs font-bold italic text-white placeholder:text-white/35 outline-none"
+            />
+            {searchQuery.trim() ? (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="shrink-0 rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white hover:bg-white/20 transition-colors"
+              >
+                Limpar
+              </button>
+            ) : (
+              <span className="shrink-0 rounded-xl bg-white/10 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white/45">
+                Busca
+              </span>
+            )}
+          </div>
+        </motion.div>
+      </AnimatePresence>
 
       {/* Floating Action Toast / Feedback */}
       <AnimatePresence>
@@ -1335,7 +1387,13 @@ export default function App() {
               initial={{ y: -20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="bg-fifa-primary text-white px-4 py-3 rounded-full text-xs font-bold flex items-center gap-2 shadow-2xl border border-white/20 justify-center text-center"
+              className={`px-4 py-3 rounded-full text-xs font-bold flex items-center gap-2 shadow-2xl border justify-center text-center ${
+                toastTone === 'warning'
+                  ? 'bg-[#8b0000] text-white border-[#fedf00]/30 shadow-[0_20px_40px_rgba(139,0,0,0.28)]'
+                  : toastTone === 'success'
+                    ? 'bg-[#009b3a] text-white border-white/20'
+                    : 'bg-fifa-primary text-white border-white/20'
+              }`}
             >
               <Check className="h-3 w-3 text-fifa-accent" />
               {toastMessage}
@@ -1662,9 +1720,14 @@ export default function App() {
                     <CheckCircle2 className="h-5 w-5" />
                     Rever tutorial
                   </button>
-                  <p className="mt-3 text-[10px] font-semibold leading-relaxed text-fifa-primary/45">
-                    Se for limpar a memória cache do navegador, faça um backup antes para não perder a coleção.
-                  </p>
+                  <div className="mt-3 rounded-2xl border border-[#8b0000]/15 bg-[#8b0000]/6 p-4 text-[#8b0000] shadow-sm">
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-[#8b0000] text-white text-[10px] font-black">!</div>
+                      <p className="text-[10px] md:text-xs font-black leading-relaxed uppercase tracking-[0.14em]">
+                        Se for limpar a memória cache do navegador, faça um backup antes para não perder a coleção.
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 <div>
@@ -1676,6 +1739,7 @@ export default function App() {
                         const required = thresholds[index] ?? 1;
                         const progress = officialStats.total > 0 ? officialStats.collected / officialStats.total : 0;
                         const unlocked = index === 0 ? officialStats.collected >= 1 : progress >= required;
+                        const requiredLabel = index === 0 ? '1 figura' : `${Math.round(required * 100)}%`;
                         const label = unlocked ? `Baixar ${index + 1}` : `Bloqueado ${index + 1}`;
 
                         return (
@@ -1699,8 +1763,8 @@ export default function App() {
                         </div>
                         <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
                         {!unlocked && (
-                          <span className="absolute inset-0 flex items-end justify-center pb-3 text-[9px] font-black uppercase tracking-[0.25em] text-fifa-primary/35">
-                            {index === 0 ? '1' : `${Math.round(required * 100)}%`}
+                          <span className="absolute right-2 top-2 rounded-full bg-[#8b0000] px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.25em] text-white shadow-lg">
+                            {requiredLabel}
                           </span>
                         )}
                       </button>
@@ -1984,15 +2048,15 @@ const StickerButton: React.FC<{
             <div className={`absolute inset-0 transition-opacity duration-500 ${isCollected ? 'bg-black/20' : 'bg-transparent'}`} />
             
             {/* Bottom Info Bar */}
-            <div className={`absolute bottom-0 left-0 w-full p-0.5 text-center transition-colors duration-500 ${isCollected ? 'bg-black/60' : 'bg-fifa-slate-200/80'}`}>
-              <span className={`text-[6px] md:text-[8px] font-black uppercase truncate block leading-none ${isCollected ? 'text-white' : 'text-fifa-primary/40'}`}>
+            <div className={`absolute bottom-0 left-0 w-full p-1 text-center transition-colors duration-500 ${isCollected ? 'bg-black/60' : 'bg-fifa-slate-200/80'}`}>
+              <span className={`text-[8px] md:text-[9px] font-black uppercase truncate block leading-none ${isCollected ? 'text-white' : 'text-fifa-primary/40'}`}>
                 {sticker.teamName}
               </span>
             </div>
 
             {/* Variant/Number Tag */}
-            <div className="absolute top-0 right-0 p-0.5">
-               <span className={`text-[6px] md:text-[8px] font-black uppercase italic px-1 rounded truncate block leading-none transition-all duration-500
+            <div className="absolute top-0 right-0 p-1">
+               <span className={`text-[7px] md:text-[8px] font-black uppercase italic px-1.5 rounded truncate block leading-none transition-all duration-500
                 ${isCollected 
                   ? 'bg-black/40 text-white shadow-sm' 
                   : 'bg-fifa-slate-200/60 text-fifa-primary/20'}`}>
@@ -2010,7 +2074,7 @@ const StickerButton: React.FC<{
                <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-white/20 pointer-events-none" />
             )}
 
-            <div className="text-[6px] md:text-[7px] font-black uppercase opacity-60 italic tracking-widest mb-auto pt-1">
+            <div className="text-[7px] md:text-[8px] font-black uppercase opacity-60 italic tracking-widest mb-auto pt-1">
               FIFA EXTRA
             </div>
 
@@ -2022,17 +2086,17 @@ const StickerButton: React.FC<{
             </div>
 
             <div className="mt-auto w-full flex flex-col items-center pb-1 gap-1">
-              <div className={`text-[6px] md:text-[8px] font-black uppercase px-2 py-0.5 rounded-full border ${isCollected ? 'border-current/20 bg-current/10' : 'border-fifa-primary/5'}`}>
+              <div className={`text-[7px] md:text-[8px] font-black uppercase px-2 py-0.5 rounded-full border ${isCollected ? 'border-current/20 bg-current/10' : 'border-fifa-primary/5'}`}>
                 {sticker.number}
               </div>
             </div>
           </div>
         ) : (
           <>
-            <span className="text-[6px] md:text-[8px] font-black uppercase opacity-60 leading-none">{sticker.teamCode}</span>
-            <span className="text-[10px] md:text-sm font-black leading-none mt-0.5 md:mt-1">{sticker.number}</span>
+            <span className="text-[8px] md:text-[8px] font-black uppercase opacity-70 leading-none">{sticker.teamCode}</span>
+            <span className="text-sm md:text-sm font-black leading-none mt-1">{sticker.number}</span>
             {sticker.teamCode === 'EXTRA' && (
-               <span className="text-[6px] md:text-[7px] font-black uppercase mt-1 px-1 text-center line-clamp-2 leading-none">
+               <span className="text-[8px] md:text-[7px] font-black uppercase mt-1 px-1 text-center line-clamp-2 leading-none">
                 {sticker.teamName}
               </span>
             )}
@@ -2073,6 +2137,7 @@ const Accordion: React.FC<{
   isOpen: boolean;
   onToggle: () => void;
 }> = ({ title, subtitle, flags, duplicates, completed, alignLeft, children, isOpen, onToggle }) => {
+  const hasFlags = Boolean(flags && flags.length > 0);
   return (
     <div className="overflow-hidden">
       <button
@@ -2082,42 +2147,69 @@ const Accordion: React.FC<{
           ${isOpen ? 'rounded-t-2xl md:rounded-t-3xl border-b-0' : 'rounded-2xl md:rounded-3xl hover:border-fifa-accent'}
         `}
       >
-        <div className="flex flex-col items-start gap-2 md:gap-3 flex-1">
-          <div className={`flex items-center gap-2 w-full pr-2 md:pr-4 ${alignLeft ? 'justify-start' : 'justify-between'}`}>
-            <div className={`flex items-baseline gap-2 ${alignLeft ? 'text-left' : ''}`}>
-              <span className="text-xs md:text-sm font-black text-fifa-primary uppercase tracking-tight italic">{title}</span>
-              {subtitle && <span className="text-[9px] md:text-[10px] font-black text-fifa-primary/30 leading-none uppercase tracking-widest whitespace-nowrap">{subtitle}</span>}
+        {hasFlags ? (
+          <div className="flex w-full items-center gap-3 md:gap-4">
+            <div className={`min-w-0 flex-1 ${alignLeft ? 'text-left' : 'text-left'}`}>
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <span className="text-xs md:text-sm font-black text-fifa-primary uppercase tracking-tight italic">{title}</span>
+                {subtitle && <span className="text-[9px] md:text-[10px] font-black text-fifa-primary/30 leading-none uppercase tracking-widest whitespace-nowrap">{subtitle}</span>}
+                <div className="flex items-center gap-2 shrink-0">
+                  {completed && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-green-50 text-green-700 px-2 py-0.5 text-[8px] md:text-[9px] font-black uppercase italic border border-green-200">
+                      <CheckCircle2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
+                      Completo
+                    </span>
+                  )}
+                  {duplicates !== undefined && duplicates > 0 && (
+                    <span className="text-[8px] md:text-[9px] font-black bg-fifa-peach text-white px-1.5 md:px-2 py-0.5 rounded-full uppercase italic shrink-0">
+                      +{duplicates}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              {completed && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-green-50 text-green-700 px-2 py-0.5 text-[8px] md:text-[9px] font-black uppercase italic border border-green-200">
-                  <CheckCircle2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
-                  Completo
-                </span>
-              )}
-              {duplicates !== undefined && duplicates > 0 && (
-                <span className="text-[8px] md:text-[9px] font-black bg-fifa-peach text-white px-1.5 md:px-2 py-0.5 rounded-full uppercase italic shrink-0">
-                  +{duplicates}
-                </span>
-              )}
-            </div>
-          </div>
-          {flags && flags.length > 0 && (
-            <div className="flex gap-1.5 md:gap-2">
+              <div className="flex flex-1 items-center justify-center gap-2 md:gap-3 px-1">
               {flags.map((flag, idx) => (
                 <img 
                   key={idx}
                   src={`https://flagcdn.com/w80/${flag || 'un'}.png`}
-                  className="w-7 md:w-10 h-4 md:h-6 object-cover rounded shadow-sm border border-fifa-slate-100"
+                  className="w-10 md:w-12 h-6 md:h-7 object-cover rounded-md shadow-sm border border-fifa-slate-100"
                   alt=""
                 />
               ))}
             </div>
-          )}
-        </div>
-        <div className={`p-1 rounded-full transition-transform duration-300 shrink-0 ${isOpen ? 'bg-fifa-primary rotate-180 shadow-md' : 'bg-fifa-slate-50'}`}>
-          <ChevronDown className={`h-4 md:h-5 w-4 md:h-5 ${isOpen ? 'text-white' : 'text-fifa-primary/30'}`} />
-        </div>
+            <div className={`p-1.5 md:p-2 rounded-full transition-transform duration-300 shrink-0 ${isOpen ? 'bg-fifa-primary rotate-180 shadow-md' : 'bg-fifa-slate-50'}`}>
+              <ChevronDown className={`h-4 md:h-5 w-4 md:h-5 ${isOpen ? 'text-white' : 'text-fifa-primary/30'}`} />
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="flex flex-col items-start gap-2 md:gap-3 flex-1">
+              <div className={`flex items-center gap-2 w-full pr-2 md:pr-4 ${alignLeft ? 'justify-start' : 'justify-between'}`}>
+                <div className={`flex items-baseline gap-2 ${alignLeft ? 'text-left' : ''}`}>
+                  <span className="text-xs md:text-sm font-black text-fifa-primary uppercase tracking-tight italic">{title}</span>
+                  {subtitle && <span className="text-[9px] md:text-[10px] font-black text-fifa-primary/30 leading-none uppercase tracking-widest whitespace-nowrap">{subtitle}</span>}
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  {completed && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-green-50 text-green-700 px-2 py-0.5 text-[8px] md:text-[9px] font-black uppercase italic border border-green-200">
+                      <CheckCircle2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
+                      Completo
+                    </span>
+                  )}
+                  {duplicates !== undefined && duplicates > 0 && (
+                    <span className="text-[8px] md:text-[9px] font-black bg-fifa-peach text-white px-1.5 md:px-2 py-0.5 rounded-full uppercase italic shrink-0">
+                      +{duplicates}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className={`p-1 rounded-full transition-transform duration-300 shrink-0 ${isOpen ? 'bg-fifa-primary rotate-180 shadow-md' : 'bg-fifa-slate-50'}`}>
+              <ChevronDown className={`h-4 md:h-5 w-4 md:h-5 ${isOpen ? 'text-white' : 'text-fifa-primary/30'}`} />
+            </div>
+          </>
+        )}
       </button>
       <AnimatePresence>
         {isOpen && (
