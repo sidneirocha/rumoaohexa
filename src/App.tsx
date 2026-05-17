@@ -720,7 +720,7 @@ export default function App() {
                 <div className="w-[1px] h-4 md:h-10 bg-white/10" />
                 <button 
                   onClick={() => setShowSettings(true)}
-                  className="p-1 md:p-2.5 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-all"
+                  className="p-3 md:p-2.5 min-w-11 min-h-11 md:min-w-0 md:min-h-0 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all flex items-center justify-center touch-manipulation"
                 >
                   <SettingsIcon className="h-3.5 w-3.5 md:h-6 md:w-6 group-hover/settings:rotate-90 transition-transform duration-500" />
                 </button>
@@ -1583,9 +1583,9 @@ const StickerButton: React.FC<{
               e.stopPropagation();
               onRemove();
             }}
-            className="pointer-events-auto h-5 w-5 bg-fifa-slate-200 text-fifa-primary rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform"
+            className="pointer-events-auto h-8 w-8 md:h-5 md:w-5 bg-fifa-slate-200 text-fifa-primary rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform touch-manipulation"
           >
-            <X className="h-3 w-3" />
+            <X className="h-4 w-4 md:h-3 md:w-3" />
           </button>
         </div>
       )}
