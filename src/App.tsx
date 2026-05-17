@@ -409,23 +409,77 @@ export default function App() {
     showToast("Dados exportados com sucesso!");
   };
 
+  const exportMarkdownData = () => {
+    const items = Object.entries(sanitizeCollection(collection));
+    if (items.length === 0) {
+      showToast("Sua coleção está vazia.");
+      return;
+    }
+
+    const lines = [
+      '# Stickers Copa 26',
+      '',
+      `Exportado em: ${new Date().toLocaleDateString()}`,
+      '',
+      '## Coleção',
+      ...items.map(([id, count]) => `- ${id}: ${count}`),
+      '',
+    ];
+
+    const dataStr = lines.join('\n');
+    const dataUri = 'data:text/markdown;charset=utf-8,' + encodeURIComponent(dataStr);
+    const exportFileDefaultName = `colecao-copa-2026-${new Date().toISOString().split('T')[0]}.md`;
+
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+    showToast("Markdown exportado com sucesso!");
+  };
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const normalizeImportedCollection = (value: unknown): Collection | null => {
-    const candidate =
-      value && typeof value === 'object' && !Array.isArray(value)
-        ? ('collection' in value && value.collection && typeof value.collection === 'object'
-            ? value.collection
-            : ('data' in value && value.data && typeof value.data === 'object'
-                ? value.data
-                : value))
-        : null;
+  const parseMarkdownCollection = (content: string): Collection | null => {
+    const lines = content.split(/\r?\n/);
+    const parsed = lines.reduce<Collection>((acc, line) => {
+      const match = line.trim().match(/^[-*]\s*([A-Za-z0-9_-]+)\s*:\s*(\d+)$/);
+      if (!match) return acc;
 
-    if (!candidate || Array.isArray(candidate)) {
-      return null;
+      const [, id, countText] = match;
+      const count = Number(countText);
+      if (Number.isFinite(count) && count > 0) {
+        acc[id] = Math.floor(count);
+      }
+      return acc;
+    }, {});
+
+    return Object.keys(parsed).length > 0 ? parsed : null;
+  };
+
+  const normalizeImportedCollection = (raw: string): Collection | null => {
+    const trimmed = raw.trim();
+    if (!trimmed) return null;
+
+    try {
+      const value = JSON.parse(trimmed);
+      const candidate =
+        value && typeof value === 'object' && !Array.isArray(value)
+          ? ('collection' in value && value.collection && typeof value.collection === 'object'
+              ? value.collection
+              : ('data' in value && value.data && typeof value.data === 'object'
+                  ? value.data
+                  : value))
+          : null;
+
+      if (candidate && !Array.isArray(candidate)) {
+        const normalized = sanitizeCollection(candidate);
+        return Object.keys(normalized).length > 0 ? normalized : null;
+      }
+    } catch {
+      // Not JSON, fall through to Markdown/TXT parsing.
     }
-    const normalized = sanitizeCollection(candidate);
-    return Object.keys(normalized).length > 0 ? normalized : null;
+
+    return parseMarkdownCollection(trimmed);
   };
 
   const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -436,16 +490,16 @@ export default function App() {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const json = JSON.parse(e.target?.result as string);
-        const importedCollection = normalizeImportedCollection(json);
+        const raw = String(e.target?.result ?? '');
+        const importedCollection = normalizeImportedCollection(raw);
         if (importedCollection) {
           setCollection(importedCollection);
           showToast("Dados importados com sucesso!");
         } else {
-          showToast("O arquivo JSON não tem o formato esperado.");
+          showToast("O arquivo precisa estar em JSON, Markdown ou TXT válido.");
         }
       } catch (err) {
-        showToast("Erro ao importar arquivo JSON.");
+        showToast("Erro ao importar arquivo.");
       }
       // Reset value to allow re-importing the same file
       input.value = '';
@@ -1016,9 +1070,9 @@ export default function App() {
               </div>
 
                 <div className="space-y-6">
-                  <div>
-                    <h4 className="text-[10px] font-black uppercase text-fifa-primary/40 tracking-[0.2em] mb-4">Sincronização Cloud</h4>
-                  <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-[10px] font-black uppercase text-fifa-primary/40 tracking-[0.2em] mb-4">Sincronização Cloud</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <button 
                       onClick={exportData}
                       className="flex flex-col items-center justify-center gap-3 py-6 bg-fifa-slate-50 border-2 border-fifa-slate-100 rounded-2xl hover:border-fifa-primary transition-all group"
@@ -1026,7 +1080,16 @@ export default function App() {
                       <div className="p-3 bg-white rounded-xl shadow-sm group-hover:bg-fifa-primary group-hover:text-white transition-colors">
                         <Share2 className="h-5 w-5" />
                       </div>
-                      <span className="text-[10px] font-black uppercase tracking-widest">Exportar</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest">Exportar JSON</span>
+                    </button>
+                    <button 
+                      onClick={exportMarkdownData}
+                      className="flex flex-col items-center justify-center gap-3 py-6 bg-fifa-slate-50 border-2 border-fifa-slate-100 rounded-2xl hover:border-fifa-primary transition-all group"
+                    >
+                      <div className="p-3 bg-white rounded-xl shadow-sm group-hover:bg-fifa-primary group-hover:text-white transition-colors">
+                        <Share2 className="h-5 w-5" />
+                      </div>
+                      <span className="text-[10px] font-black uppercase tracking-widest">Exportar MD</span>
                     </button>
                     <button 
                       onClick={() => fileInputRef.current?.click()}
@@ -1039,7 +1102,7 @@ export default function App() {
                       <input 
                         type="file" 
                         ref={fileInputRef}
-                        accept=".json" 
+                        accept=".json,.md,.txt" 
                         onChange={handleImport} 
                         className="hidden" 
                       />
