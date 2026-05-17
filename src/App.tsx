@@ -7,7 +7,7 @@ import React, { useState, useEffect, useMemo, ReactNode } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import confetti from 'canvas-confetti';
-import { Search, Trophy, CheckCircle2, Circle, Menu, X, ChevronRight, ChevronDown, Filter, Share2, Copy, Check, Settings as SettingsIcon } from 'lucide-react';
+import { Search, Trophy, CheckCircle2, Circle, Menu, X, ChevronRight, ChevronDown, Filter, Share2, Copy, Check, Settings as SettingsIcon, MessageCircleMore } from 'lucide-react';
 import { motion, AnimatePresence, useScroll, useSpring } from 'motion/react';
 import { Collection, Sticker } from './types';
 import { GROUPS, SPECIALS, FIFA_TO_ISO, LEGENDS_PLAYERS, LEGENDS_VARIANTS, VARIANT_COLORS } from './constants';
@@ -434,8 +434,93 @@ export default function App() {
     });
   };
 
+  const buildTradeEntries = (type: 'missing' | 'duplicates') => {
+    const relevant = type === 'missing'
+      ? allStickers.filter(s => (collection[s.id] || 0) === 0)
+      : allStickers.filter(s => (collection[s.id] || 0) > 1);
+
+    const grouped = Object.entries(
+      relevant.reduce((acc, sticker) => {
+        if (!acc[sticker.teamCode]) acc[sticker.teamCode] = [];
+        acc[sticker.teamCode].push(sticker);
+        return acc;
+      }, {} as Record<string, Sticker[]>)
+    ).map(([teamCode, stickers]) => {
+      const first = stickers[0];
+      const labels = stickers.map((sticker) => {
+        const count = collection[sticker.id] || 0;
+        let label = sticker.number;
+        if (sticker.teamCode === 'EXTRA') {
+          label = `${sticker.teamName} (${sticker.number})`;
+        }
+        if (type === 'duplicates') {
+          label += `(x${count - 1})`;
+        }
+        return label;
+      });
+
+      return {
+        teamCode,
+        teamName: first?.teamName || teamCode,
+        flag: FIFA_TO_ISO[teamCode],
+        labels,
+      };
+    });
+
+    const totalDisplay = type === 'duplicates'
+      ? relevant.reduce((acc, s) => acc + ((collection[s.id] || 0) - 1), 0)
+      : relevant.length;
+
+    return { relevant, grouped, totalDisplay };
+  };
+
+  const getTradeMessage = (type: 'missing' | 'duplicates') => {
+    const { grouped, totalDisplay } = buildTradeEntries(type);
+    const header = type === 'missing' ? 'Lista de Faltantes' : 'Lista de Trocas';
+    const lines = [
+      `${header} - Stickers Copa 26`,
+      `Total: ${totalDisplay} ${type === 'missing' ? 'figurinhas' : 'repetidas'}`,
+      '',
+      ...grouped.flatMap((entry) => [
+        `${entry.teamName}${entry.flag ? ` (${entry.teamCode})` : ''}: ${entry.labels.join(', ')}`,
+      ]),
+    ];
+
+    return lines.join('\n');
+  };
+
+  const copyTradeList = async (type: 'missing' | 'duplicates') => {
+    const message = getTradeMessage(type);
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(message);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = message;
+        textarea.setAttribute('readonly', 'true');
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        textarea.remove();
+      }
+      showToast('Lista copiada com sucesso.');
+    } catch {
+      showToast('Não foi possível copiar a lista.');
+    }
+  };
+
+  const openTradeListWhatsApp = (type: 'missing' | 'duplicates') => {
+    const message = getTradeMessage(type);
+    const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+    showToast('Abrindo lista no WhatsApp.');
+  };
+
   const shareList = (type: 'missing' | 'duplicates') => {
-    const relevant = type === 'missing' 
+    const { grouped, totalDisplay } = buildTradeEntries(type);
+    const relevant = type === 'missing'
       ? allStickers.filter(s => (collection[s.id] || 0) === 0)
       : allStickers.filter(s => (collection[s.id] || 0) > 1);
 
@@ -445,39 +530,21 @@ export default function App() {
     }
 
     const doc = new jsPDF();
-    const title = type === 'missing' ? 'Copa do Mundo 2026 - Faltantes' : 'Copa do Mundo 2026 - Repetidas';
+    const title = type === 'missing' ? 'Copa do Mundo 2026 - Faltantes' : 'Copa do Mundo 2026 - Trocas';
     
     doc.setFont("helvetica", "bold");
     doc.setFontSize(18);
     doc.setTextColor(0, 29, 71);
     doc.text(title, 14, 20);
-    
-    const totalDisplay = type === 'duplicates' 
-      ? relevant.reduce((acc, s) => acc + ((collection[s.id] || 0) - 1), 0)
-      : relevant.length;
-    
+
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.setTextColor(100);
     doc.text(`Total: ${totalDisplay} ${type === 'missing' ? 'figurinhas' : 'repetidas'} | Gerado em: ${new Date().toLocaleDateString()}`, 14, 28);
-
-    const byTeam: { [key: string]: string[] } = {};
-    relevant.forEach(s => {
-      if (!byTeam[s.teamCode]) byTeam[s.teamCode] = [];
-      const count = collection[s.id] || 0;
-      
-      let label = s.number;
-      if (s.teamCode === 'EXTRA') {
-        label = `${s.teamName} (${s.number})`;
-      }
-      
-      if (type === 'duplicates') {
-        label += `(x${count - 1})`;
-      }
-      byTeam[s.teamCode].push(label);
-    });
-
-    const tableData = Object.entries(byTeam).map(([team, numbers]) => [team, numbers.join(", ")]);
+    const tableData = grouped.map(({ teamCode, teamName, labels }) => [
+      `${teamName} (${teamCode})`,
+      labels.join(', '),
+    ]);
 
     autoTable(doc, {
       startY: 35,
@@ -1187,41 +1254,59 @@ export default function App() {
               </div>
 
               <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
-                {Object.entries(
-                  exportPreview.stickers.reduce((acc, s) => {
-                    if (!acc[s.teamCode]) acc[s.teamCode] = [];
-                    
-                    let label = s.number;
-                    if (s.teamCode === 'EXTRA') {
-                      label = `${s.teamName} (${s.number})`;
-                    }
-
-                    if (exportPreview.type === 'duplicates') {
-                      label += `(x${(collection[s.id] || 1)-1})`;
-                    }
-                    
-                    acc[s.teamCode].push(label);
-                    return acc;
-                  }, {} as Record<string, string[]>)
-                ).map(([teamCode, numbers]) => (
-                  <div key={teamCode} className="flex gap-4 border-b border-fifa-slate-100 pb-3">
-                    <span className="w-16 font-black text-fifa-primary italic text-sm">{teamCode}</span>
-                    <span className="flex-1 text-sm font-bold text-fifa-primary/60">{(numbers as string[]).join(", ")}</span>
+                {buildTradeEntries(exportPreview.type).grouped.map(({ teamCode, teamName, flag, labels }) => (
+                  <div key={teamCode} className="flex gap-4 border-b border-fifa-slate-100 pb-4">
+                    <div className="w-44 flex items-center gap-3">
+                      {flag ? (
+                        <img
+                          src={`https://flagcdn.com/w80/${flag}.png`}
+                          alt={teamName}
+                          className="w-9 h-auto rounded shadow-sm border border-fifa-slate-100"
+                        />
+                      ) : (
+                        <div className="w-9 h-7 rounded bg-fifa-slate-100 flex items-center justify-center text-[9px] font-black text-fifa-primary/40">
+                          {teamCode}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-sm font-black text-fifa-primary italic uppercase leading-tight truncate">{teamName}</p>
+                        <p className="text-[10px] font-bold text-fifa-primary/35 uppercase tracking-[0.2em]">{teamCode}</p>
+                      </div>
+                    </div>
+                    <span className="flex-1 text-sm font-bold text-fifa-primary/60">{labels.join(", ")}</span>
                   </div>
                 ))}
               </div>
 
               <div className="p-6 md:p-8 border-t border-fifa-slate-100 bg-white">
-                <button 
-                  onClick={() => {
-                    shareList(exportPreview.type);
-                    setExportPreview(null);
-                  }}
-                  className="w-full py-4 bg-fifa-accent text-fifa-primary rounded-2xl font-black uppercase italic tracking-widest shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3"
-                >
-                  <Trophy className="h-5 w-5" />
-                  Download PDF Oficial
-                </button>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => copyTradeList(exportPreview.type)}
+                    className="w-full py-4 bg-fifa-slate-50 text-fifa-primary rounded-2xl font-black uppercase italic tracking-widest shadow-xl hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-3 border border-fifa-slate-100"
+                  >
+                    <Copy className="h-5 w-5" />
+                    Copiar lista
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openTradeListWhatsApp(exportPreview.type)}
+                    className="w-full py-4 bg-[#25D366] text-white rounded-2xl font-black uppercase italic tracking-widest shadow-xl hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-3"
+                  >
+                    <MessageCircleMore className="h-5 w-5" />
+                    WhatsApp
+                  </button>
+                  <button 
+                    onClick={() => {
+                      shareList(exportPreview.type);
+                      setExportPreview(null);
+                    }}
+                    className="w-full py-4 bg-fifa-accent text-fifa-primary rounded-2xl font-black uppercase italic tracking-widest shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3"
+                  >
+                    <Trophy className="h-5 w-5" />
+                    {exportPreview.type === 'missing' ? 'Download Lista Faltantes' : 'Download Lista Trocas'}
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>
