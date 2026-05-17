@@ -1,20 +1,72 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Stickers Copa 26
 
-# Run and deploy your AI Studio app
+Gerenciador visual de figurinhas da Copa 2026, pensado para acompanhar a coleção no celular e no desktop com foco em rapidez, organização e exportação.
 
-This contains everything you need to run your app locally.
+## Loading
 
-View your app in AI Studio: https://ai.studio/apps/27771549-7f2e-4135-bbb6-b76a976a3c68
+O app abre com uma tela de impacto visual antes de liberar o painel principal. Esse loading alterna imagens temáticas da Copa e cria a sensação de abertura da coleção.
 
-## Run Locally
+| Imagem 1 | Imagem 2 | Imagem 3 |
+| --- | --- | --- |
+| ![Loading 1](album.jpeg) | ![Loading 2](figurinha.jpeg) | ![Loading 3](taca2.jpg) |
 
-**Prerequisites:**  Node.js
+Imagens extras usadas no tema visual:
 
+| Detalhe 1 | Detalhe 2 |
+| --- | --- |
+| ![Detalhe 1](magnific__faa-uma-verso-agora-ele-levantando-a-taa-com-confe__92019.jpeg) | ![Detalhe 2](magnific__una-as-imagens-faa-o-personagem-segurar-a-taa-na-a__92020.jpeg) |
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Como o sistema funciona
+
+O app foi desenhado como um painel único de controle da coleção:
+
+1. A coleção é salva localmente no navegador com `localStorage`.
+2. O usuário adiciona e remove figurinhas por cartão.
+3. A busca localiza seleções por código, nome da seleção ou jogador.
+4. Os filtros separam figurinhas coletadas, faltantes e repetidas.
+5. O sistema calcula estatísticas em tempo real.
+6. A exportação gera arquivo JSON para backup e restauração.
+7. A exportação em PDF cria listas de faltantes e repetidas para troca.
+
+## Recursos principais
+
+- Painel mobile-first com visual inspirado na Copa.
+- Organizador de seleções por grupos.
+- Seção especial para cromos e extras.
+- Área de lendas com variantes visuais.
+- Exportação e importação de coleção.
+- Geração de PDF com apoio para trocas.
+- Estado persistente no navegador.
+
+## Estrutura do app
+
+- `src/App.tsx`: interface principal e regras de interação.
+- `src/constants.ts`: grupos, seleções e dados de apoio.
+- `src/types.ts`: tipos da coleção.
+- `src/index.css`: base visual e variáveis do tema.
+- `public/manifest.json`: comportamento de instalação como app.
+
+## Tecnologias
+
+- React 19
+- Vite
+- TypeScript
+- Tailwind CSS 4
+- jsPDF
+- Motion
+- canvas-confetti
+
+## Rodando localmente
+
+1. Instale as dependências:
+   ```bash
+   npm install
+   ```
+2. Rode o projeto:
+   ```bash
+   npm run dev
+   ```
+
+## Observação
+
+Se você estiver vendo apenas a branch `gh-pages`, ela contém o build publicado do site. O código-fonte e este README vivem na `main`.
