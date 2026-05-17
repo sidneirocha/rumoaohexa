@@ -13,11 +13,36 @@ import { Collection, Sticker } from './types';
 import { GROUPS, SPECIALS, FIFA_TO_ISO, LEGENDS_PLAYERS, LEGENDS_VARIANTS, VARIANT_COLORS } from './constants';
 
 type FilterType = 'all' | 'collected' | 'missing';
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void> | void;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+};
+
+const sanitizeCollection = (value: unknown): Collection => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {};
+  }
+
+  return Object.entries(value as Record<string, unknown>).reduce<Collection>((acc, [key, rawValue]) => {
+    const nextValue =
+      typeof rawValue === 'number'
+        ? rawValue
+        : typeof rawValue === 'string'
+          ? Number(rawValue)
+          : Number.NaN;
+
+    if (Number.isFinite(nextValue) && nextValue > 0) {
+      acc[key] = Math.floor(nextValue);
+    }
+
+    return acc;
+  }, {});
+};
 
 export default function App() {
   const [collection, setCollection] = useState<Collection>(() => {
     const saved = localStorage.getItem('sticker-collection');
-    return saved ? JSON.parse(saved) : {};
+    return saved ? sanitizeCollection(JSON.parse(saved)) : {};
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -276,6 +301,10 @@ export default function App() {
     setCollection((prev) => {
       const current = prev[id] || 0;
       const next = Math.max(0, current + delta);
+      if (next === 0) {
+        const { [id]: _removed, ...rest } = prev;
+        return rest;
+      }
       return { ...prev, [id]: next };
     });
   };
@@ -344,7 +373,7 @@ export default function App() {
   };
 
   const exportData = () => {
-    const dataStr = JSON.stringify(collection, null, 2);
+    const dataStr = JSON.stringify(sanitizeCollection(collection), null, 2);
     const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
     
     const exportFileDefaultName = `colecao-copa-2026-${new Date().toISOString().split('T')[0]}.json`;
@@ -371,23 +400,7 @@ export default function App() {
     if (!candidate || Array.isArray(candidate)) {
       return null;
     }
-
-    const entries = Object.entries(candidate as Record<string, unknown>);
-    const normalized = entries.reduce<Collection>((acc, [key, rawValue]) => {
-      const nextValue =
-        typeof rawValue === 'number'
-          ? rawValue
-          : typeof rawValue === 'string'
-            ? Number(rawValue)
-            : Number.NaN;
-
-      if (Number.isFinite(nextValue) && nextValue >= 0) {
-        acc[key] = Math.floor(nextValue);
-      }
-
-      return acc;
-    }, {});
-
+    const normalized = sanitizeCollection(candidate);
     return Object.keys(normalized).length > 0 ? normalized : null;
   };
 
