@@ -24,12 +24,24 @@ const sanitizeCollection = (value: unknown): Collection => {
   }
 
   return Object.entries(value as Record<string, unknown>).reduce<Collection>((acc, [key, rawValue]) => {
-    const nextValue =
-      typeof rawValue === 'number'
-        ? rawValue
-        : typeof rawValue === 'string'
-          ? Number(rawValue)
-          : Number.NaN;
+    let nextValue: number;
+
+    if (typeof rawValue === 'boolean') {
+      nextValue = rawValue ? 1 : 0;
+    } else if (typeof rawValue === 'number') {
+      nextValue = rawValue;
+    } else if (typeof rawValue === 'string') {
+      const normalized = rawValue.toLowerCase();
+      if (normalized === 'true') {
+        nextValue = 1;
+      } else if (normalized === 'false') {
+        nextValue = 0;
+      } else {
+        nextValue = Number(rawValue);
+      }
+    } else {
+      nextValue = Number.NaN;
+    }
 
     if (Number.isFinite(nextValue) && nextValue > 0) {
       acc[key] = Math.floor(nextValue);
