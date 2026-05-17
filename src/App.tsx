@@ -428,18 +428,11 @@ export default function App() {
   }, [allStickers, collection]);
 
   const officialStats = useMemo(() => {
-    const baseOfficialTotal = allStickers.filter((sticker) => sticker.teamCode !== 'EXTRA' && sticker.teamCode !== 'CC').length;
-    const legendsOfficialTotal = LEGENDS_PLAYERS.length;
-    const total = baseOfficialTotal + legendsOfficialTotal;
+    const total = allStickers.filter((sticker) => sticker.teamCode !== 'EXTRA' && sticker.teamCode !== 'CC').length;
 
-    const baseOfficialCollected = allStickers.filter(
+    const collected = allStickers.filter(
       (sticker) => sticker.teamCode !== 'EXTRA' && sticker.teamCode !== 'CC' && (collection[sticker.id] || 0) > 0
     ).length;
-    const legendsCollected = LEGENDS_PLAYERS.filter((player) =>
-      LEGENDS_VARIANTS.some((variant) => (collection[`LEG-${player.code}-${variant.toUpperCase()}`] || 0) > 0)
-    ).length;
-
-    const collected = baseOfficialCollected + legendsCollected;
     const percentage = Math.round((collected / total) * 100);
 
     return { total, collected, percentage };
@@ -1620,7 +1613,7 @@ export default function App() {
                       Álbum completo
                     </h3>
                     <p className="text-sm md:text-base font-semibold text-fifa-primary/60 max-w-md mx-auto">
-                      Você completou as 1000 figurinhas oficiais da coleção Stickers Copa 26.
+                      Você completou as 980 figurinhas oficiais da coleção Stickers Copa 26.
                     </p>
                   </div>
                   <button
