@@ -22,6 +22,13 @@ export default function App() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
+  const [showIOSInstructions, setShowIOSInstructions] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [installBannerDismissed, setInstallBannerDismissed] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('install-banner-dismissed') === 'true';
+  });
 
   const LOADING_IMAGES = [
     "https://raw.githubusercontent.com/sidneirocha/rumoaohexa/c71ad64023daf692e0c2f90931fbbbc1bb51fd45/album.jpeg",
@@ -30,11 +37,43 @@ export default function App() {
   ];
 
   const randomImage = useMemo(() => LOADING_IMAGES[Math.floor(Math.random() * LOADING_IMAGES.length)], []);
+  const isIOS = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    return /iPad|iPhone|iPod/.test(window.navigator.userAgent) && !(window as Window & { MSStream?: unknown }).MSStream;
+  }, []);
+
+  const isStandalone = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(display-mode: standalone)').matches || (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 4000);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setDeferredPrompt(event as BeforeInstallPromptEvent);
+      if (!isStandalone) {
+        setShowInstallBanner(true);
+      }
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, [isStandalone]);
+
+  useEffect(() => {
+    if (!isLoading && !isStandalone && !installBannerDismissed) {
+      const timer = window.setTimeout(() => {
+        setShowInstallBanner(true);
+      }, 1000);
+
+      return () => window.clearTimeout(timer);
+    }
+  }, [isLoading, isStandalone, installBannerDismissed]);
 
   useEffect(() => {
     if (isLoading) {
@@ -122,9 +161,43 @@ export default function App() {
     setTimeout(() => setShowShareToast(false), 2000);
   };
 
+  const dismissInstallBanner = () => {
+    setShowInstallBanner(false);
+    setShowIOSInstructions(false);
+    setInstallBannerDismissed(true);
+    localStorage.setItem('install-banner-dismissed', 'true');
+  };
+
+  const openInstallPrompt = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+      if (choice.outcome === 'accepted') {
+        showToast('App pronto para instalar na tela inicial');
+      }
+      setDeferredPrompt(null);
+      setShowInstallBanner(false);
+      return;
+    }
+
+    if (isIOS) {
+      setShowIOSInstructions(true);
+      setShowInstallBanner(true);
+      return;
+    }
+
+    showToast('Use o menu do navegador para instalar o app');
+  };
+
   useEffect(() => {
     localStorage.setItem('sticker-collection', JSON.stringify(collection));
   }, [collection]);
+
+  useEffect(() => {
+    if (installBannerDismissed || isStandalone) {
+      setShowInstallBanner(false);
+    }
+  }, [isStandalone, installBannerDismissed]);
 
   const allStickers = useMemo(() => {
     const stickers: Sticker[] = [];
@@ -802,6 +875,62 @@ export default function App() {
               {toastMessage}
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showInstallBanner && !isStandalone && (
+          <motion.div
+            initial={{ y: 120, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 120, opacity: 0 }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
+            className="fixed bottom-4 left-4 right-4 z-[180] mx-auto max-w-2xl"
+          >
+            <div className="rounded-[1.75rem] border border-white/15 bg-[#002772]/95 text-white shadow-[0_20px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl overflow-hidden">
+              <div className="h-1 w-full bg-gradient-to-r from-fifa-accent via-fifa-cyan to-fifa-peach" />
+              <div className="p-4 md:p-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="h-11 w-11 rounded-2xl bg-white/10 flex items-center justify-center shrink-0 border border-white/10">
+                    <Share2 className="h-5 w-5 text-fifa-accent" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs uppercase tracking-[0.3em] text-white/45 font-black">Instalar app</p>
+                    <p className="text-sm md:text-base font-bold leading-snug">
+                      {isIOS
+                        ? 'No iPhone, use o botão de compartilhar e escolha "Adicionar à Tela de Início".'
+                        : 'Instale o app na tela inicial para abrir rápido e usar como aplicativo.'}
+                    </p>
+                    {showIOSInstructions && isIOS && (
+                      <ol className="mt-2 space-y-1 text-xs md:text-sm text-white/70 list-decimal list-inside">
+                        <li>Toque no ícone de compartilhar do Safari.</li>
+                        <li>Selecione “Adicionar à Tela de Início”.</li>
+                        <li>Confirme em “Adicionar”.</li>
+                      </ol>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={openInstallPrompt}
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-fifa-accent px-4 py-3 text-sm font-black uppercase tracking-widest text-fifa-primary shadow-lg shadow-fifa-accent/25 transition-transform active:scale-95"
+                  >
+                    {isIOS ? 'Ver passo a passo' : deferredPrompt ? 'Instalar agora' : 'Instalar'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={dismissInstallBanner}
+                    className="h-12 w-12 rounded-2xl border border-white/10 bg-white/5 text-white/70 transition-colors hover:bg-white/10"
+                    aria-label="Fechar instalação"
+                  >
+                    <X className="mx-auto h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
