@@ -1025,7 +1025,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {LEGENDS_PLAYERS.map(player => {
                     const stickers = getFilteredStickers(allStickers.filter(s => s.teamName === player.name && s.teamCode === 'EXTRA'));
                     if (stickers.length === 0 && filter !== 'all') return null;
