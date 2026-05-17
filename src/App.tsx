@@ -1027,12 +1027,12 @@ export default function App() {
       {/* Floating Action Toast / Feedback */}
       <AnimatePresence>
         {showShareToast && (
-          <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[60]">
+          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[220] px-4 w-full max-w-md pointer-events-none">
             <motion.div 
               initial={{ y: -20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="bg-fifa-primary text-white px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 shadow-2xl border border-white/20"
+              className="bg-fifa-primary text-white px-4 py-3 rounded-full text-xs font-bold flex items-center gap-2 shadow-2xl border border-white/20 justify-center text-center"
             >
               <Check className="h-3 w-3 text-fifa-accent" />
               {toastMessage}
