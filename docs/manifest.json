@@ -1,6 +1,6 @@
 {
-  "name": "Rumo ao Hexa 2026",
-  "short_name": "Rumo ao Hexa",
+  "name": "Stickers Copa 2026",
+  "short_name": "Stickers Copa",
   "description": "Controlador oficial de figurinhas da Copa 2026",
   "start_url": "./",
   "scope": "./",
@@ -9,9 +9,9 @@
   "theme_color": "#002772",
   "icons": [
     {
-      "src": "https://upload.wikimedia.org/wikipedia/en/1/17/2026_FIFA_World_Cup_emblem.svg",
+      "src": "https://raw.githubusercontent.com/sidneirocha/stickerscopa26/e72f901b3a3315b8a174cdbd6e93df9cbcfaebab/favico.webp",
       "sizes": "512x512",
-      "type": "image/svg+xml"
+      "type": "image/webp"
     }
   ]
 }
