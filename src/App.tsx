@@ -510,7 +510,7 @@ export default function App() {
           document.execCommand('copy');
           textarea.remove();
         }
-        showToast("Markdown copiado para a área de transferência!");
+        showToast("Markdown copiado com sucesso. Agora é só colar onde quiser.");
       } catch {
         showToast("Não foi possível copiar o Markdown.");
       }
