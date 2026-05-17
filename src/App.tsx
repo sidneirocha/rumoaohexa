@@ -485,7 +485,9 @@ export default function App() {
 
     const grouped = Object.entries(
       relevant.reduce((acc, sticker) => {
-        const groupKey = sticker.group || sticker.teamCode;
+        const groupKey = sticker.teamCode === 'EXTRA'
+          ? sticker.teamName
+          : (sticker.group || sticker.teamCode);
         if (!acc[groupKey]) acc[groupKey] = [];
         acc[groupKey].push(sticker);
         return acc;
@@ -507,8 +509,9 @@ export default function App() {
           });
 
       return {
+        key: `${first?.teamCode || groupKey}-${groupKey}`,
         teamCode: first?.teamCode || groupKey,
-        teamName: first?.teamCode === 'EXTRA' ? 'Legends Extra' : (first?.group || first?.teamName || groupKey),
+        teamName: first?.teamCode === 'EXTRA' ? (first?.teamName || groupKey) : (first?.group || first?.teamName || groupKey),
         flag: FIFA_TO_ISO[first?.teamCode || groupKey],
         labels,
       };
@@ -1307,8 +1310,8 @@ export default function App() {
               </div>
 
               <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
-                {buildTradeEntries(exportPreview.type).grouped.map(({ teamCode, teamName, flag, labels }) => (
-                  <div key={teamCode} className="flex gap-4 border-b border-fifa-slate-100 pb-4">
+                {buildTradeEntries(exportPreview.type).grouped.map(({ key, teamCode, teamName, flag, labels }) => (
+                  <div key={key} className="flex gap-4 border-b border-fifa-slate-100 pb-4">
                     <div className="w-44 flex items-center gap-3">
                       {flag ? (
                         <img
