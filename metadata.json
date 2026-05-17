@@ -1,0 +1,8 @@
+{
+  "name": "Álbum Copa 2026",
+  "description": "Gerenciador de figurinhas mobile-first para a Copa do Mundo 2026 com busca, estatísticas e exportação em PDF, inspirado nas cores do Brasil.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "Rumo ao Hexa 2026",
+  "short_name": "Rumo ao Hexa",
+  "description": "Controlador oficial de figurinhas da Copa 2026",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#002772",
+  "theme_color": "#002772",
+  "icons": [
+    {
+      "src": "https://upload.wikimedia.org/wikipedia/en/1/17/2026_FIFA_World_Cup_emblem.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
