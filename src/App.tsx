@@ -109,6 +109,11 @@ export default function App() {
     if (typeof window === 'undefined') return false;
     return localStorage.getItem('install-banner-dismissed') === 'true';
   });
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [tutorialDismissed, setTutorialDismissed] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('onboarding-dismissed') === 'true';
+  });
 
   const LOADING_IMAGES = [
     "https://raw.githubusercontent.com/sidneirocha/stickerscopa26/99fab2db99f5941e3a573be4c30def3eedbb17d8/wp1.webp",
@@ -147,14 +152,24 @@ export default function App() {
   }, [isStandalone]);
 
   useEffect(() => {
-    if (!isLoading && !isStandalone && !installBannerDismissed) {
+    if (!isLoading && !isStandalone && !installBannerDismissed && tutorialDismissed) {
       const timer = window.setTimeout(() => {
         setShowInstallBanner(true);
       }, 1000);
 
       return () => window.clearTimeout(timer);
     }
-  }, [isLoading, isStandalone, installBannerDismissed]);
+  }, [isLoading, isStandalone, installBannerDismissed, tutorialDismissed]);
+
+  useEffect(() => {
+    if (!isLoading && !tutorialDismissed) {
+      const timer = window.setTimeout(() => {
+        setShowTutorial(true);
+      }, 500);
+
+      return () => window.clearTimeout(timer);
+    }
+  }, [isLoading, tutorialDismissed]);
 
   useEffect(() => {
     if (isLoading) {
@@ -249,6 +264,12 @@ export default function App() {
     setShowIOSInstructions(false);
     setInstallBannerDismissed(true);
     localStorage.setItem('install-banner-dismissed', 'true');
+  };
+
+  const dismissTutorial = () => {
+    setShowTutorial(false);
+    setTutorialDismissed(true);
+    localStorage.setItem('onboarding-dismissed', 'true');
   };
 
   const openInstallPrompt = async () => {
@@ -982,6 +1003,74 @@ export default function App() {
             >
               <Check className="h-3 w-3 text-fifa-accent" />
               {toastMessage}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showTutorial && (
+          <div className="fixed inset-0 z-[190] flex items-center justify-center p-4 md:p-8">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={dismissTutorial}
+              className="absolute inset-0 bg-black/70 backdrop-blur-xl"
+            />
+            <motion.div
+              initial={{ scale: 0.94, opacity: 0, y: 18 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.94, opacity: 0, y: 18 }}
+              className="relative w-full max-w-2xl overflow-hidden rounded-[2rem] border border-white/10 bg-white shadow-2xl"
+            >
+              <div className="h-1 w-full bg-gradient-to-r from-fifa-accent via-fifa-cyan to-fifa-peach" />
+              <div className="p-6 md:p-8">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-fifa-primary/35">Bem-vindo</p>
+                    <h3 className="text-2xl md:text-3xl font-black text-fifa-primary uppercase tracking-tight">Como usar o app</h3>
+                    <p className="text-sm md:text-base font-medium text-fifa-primary/65 max-w-xl">
+                      Este é um guia rápido para começar a organizar sua coleção sem perder tempo.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={dismissTutorial}
+                    className="p-2 hover:bg-fifa-slate-100 rounded-full transition-colors"
+                    aria-label="Fechar tutorial"
+                  >
+                    <X className="h-6 w-6 text-fifa-primary/40" />
+                  </button>
+                </div>
+
+                <div className="mt-6 grid gap-3 md:grid-cols-2">
+                  {[
+                    { title: '1. Busque', text: 'Use a barra de busca para encontrar seleções, jogadores ou códigos rapidamente.' },
+                    { title: '2. Marque figurinhas', text: 'Toque em uma figurinha para adicionar e toque de novo para remover.' },
+                    { title: '3. Filtre', text: 'Use Faltantes, Trocas e Ver todas para navegar pela coleção.' },
+                    { title: '4. Salve', text: 'Exportar JSON faz backup, Copiar MD gera um resumo fácil de compartilhar.' },
+                  ].map((step) => (
+                    <div key={step.title} className="rounded-2xl border border-fifa-slate-100 bg-fifa-slate-50 px-4 py-4">
+                      <p className="text-[10px] font-black uppercase tracking-[0.25em] text-fifa-primary/35">{step.title}</p>
+                      <p className="mt-2 text-sm md:text-[15px] font-semibold leading-relaxed text-fifa-primary/70">{step.text}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                  <p className="text-xs md:text-sm font-bold text-fifa-primary/45 uppercase tracking-[0.2em]">
+                    O tutorial aparece só na primeira vez.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={dismissTutorial}
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-fifa-primary px-5 py-3 text-sm font-black uppercase tracking-widest text-white shadow-lg shadow-fifa-primary/20 transition-transform active:scale-95"
+                  >
+                    Começar agora
+                  </button>
+                </div>
+              </div>
             </motion.div>
           </div>
         )}
