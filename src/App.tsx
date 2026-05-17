@@ -568,9 +568,32 @@ export default function App() {
 
             {/* Content Container - Pushed to bottom */}
             <div className="relative z-10 w-full flex flex-col justify-end items-center flex-1 pb-8 md:pb-12">
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-black/45 text-white/90 backdrop-blur-md">
-                <div className="h-2 w-2 rounded-full bg-fifa-accent animate-pulse" />
-                <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.4em]">Carregando</span>
+              <div className="w-full max-w-sm px-8 flex flex-col items-center gap-4">
+                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-black/45 text-white/90 backdrop-blur-md">
+                  <div className="h-2 w-2 rounded-full bg-fifa-accent animate-pulse" />
+                  <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.4em]">Carregando</span>
+                </div>
+
+                <div className="relative w-full">
+                  <div className="relative w-full h-5 md:h-7 bg-black/70 rounded-full p-1 border border-white/20">
+                    <motion.div
+                      initial={{ width: "0%" }}
+                      animate={{ width: "100%" }}
+                      transition={{ duration: 4, ease: "easeInOut" }}
+                      className="h-full bg-gradient-to-r from-[#009b3a] via-[#fedf00] to-[#009b3a] bg-[length:200%_100%] animate-shimmer rounded-full relative overflow-visible"
+                    >
+                      <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 pointer-events-none">
+                        <div className="w-10 h-10 md:w-14 md:h-14 bg-white rounded-full flex items-center justify-center shadow-[0_0_14px_rgba(255,255,255,0.35)] overflow-hidden">
+                          <img
+                            src="https://www.svgrepo.com/show/77569/soccer-ball.svg"
+                            alt="Soccer Ball"
+                            className="w-[90%] h-[90%] animate-spin-slow"
+                          />
+                        </div>
+                      </div>
+                    </motion.div>
+                  </div>
+                </div>
               </div>
             </div>
           </motion.div>

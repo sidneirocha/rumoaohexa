@@ -8,7 +8,7 @@ O app abre com uma tela de impacto visual antes de liberar o painel principal. E
 
 | Imagem 1 | Imagem 2 | Imagem 3 |
 | --- | --- | --- |
-| ![Loading 1](album.jpeg) | ![Loading 2](figurinha.jpeg) | ![Loading 3](taca2.jpg) |
+| ![Loading 1](https://raw.githubusercontent.com/sidneirocha/stickerscopa26/99fab2db99f5941e3a573be4c30def3eedbb17d8/wp1.webp) | ![Loading 2](https://raw.githubusercontent.com/sidneirocha/stickerscopa26/99fab2db99f5941e3a573be4c30def3eedbb17d8/wp2.webp) | ![Loading 3](https://raw.githubusercontent.com/sidneirocha/stickerscopa26/99fab2db99f5941e3a573be4c30def3eedbb17d8/wp3.webp) |
 
 ## Como o sistema funciona
 
