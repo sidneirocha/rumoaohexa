@@ -110,6 +110,7 @@ export default function App() {
     return localStorage.getItem('install-banner-dismissed') === 'true';
   });
   const [showTutorial, setShowTutorial] = useState(false);
+  const [tutorialSlide, setTutorialSlide] = useState(0);
   const [showCompletionCelebration, setShowCompletionCelebration] = useState(false);
   const [tutorialDismissed, setTutorialDismissed] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -177,6 +178,12 @@ export default function App() {
       return () => window.clearTimeout(timer);
     }
   }, [isLoading, tutorialDismissed]);
+
+  useEffect(() => {
+    if (showTutorial) {
+      setTutorialSlide(0);
+    }
+  }, [showTutorial]);
 
   useEffect(() => {
     if (isLoading) {
@@ -740,6 +747,176 @@ export default function App() {
     return result;
   };
 
+  const tutorialSlides = [
+    {
+      title: 'Busque',
+      description: 'Use a busca e os filtros rápidos para localizar seleções, jogadores ou códigos sem perder tempo.',
+      accent: 'from-[#002772] to-[#1b4fb8]',
+    },
+    {
+      title: 'Adicione',
+      description: 'Toque em uma figurinha para cadastrar sua coleção e toque de novo para criar repetidas.',
+      accent: 'from-[#009b3a] to-[#2cbf6e]',
+    },
+    {
+      title: 'Backup',
+      description: 'Copie o backup antes de limpar a memória cache do navegador e mantenha sua coleção segura.',
+      accent: 'from-[#8b0000] to-[#d1004d]',
+    },
+    {
+      title: 'Recompensas',
+      description: 'À medida que você avança, os wallpapers vão sendo liberados e o álbum chega ao fim com festa.',
+      accent: 'from-[#fedf00] to-[#f5b800]',
+    },
+  ];
+
+  const renderTutorialPreview = (index: number) => {
+    switch (index) {
+      case 0:
+        return (
+          <div className="rounded-[2rem] border border-fifa-slate-100 bg-white shadow-[0_20px_60px_rgba(0,39,114,0.12)] overflow-hidden">
+            <div className="bg-[#002772] text-white px-4 py-4 relative overflow-hidden">
+              <div className="absolute inset-y-0 right-0 w-28 bg-[#009b3a]/40 rounded-l-full" />
+              <div className="relative flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-xl bg-white/10 flex items-center justify-center">
+                    <Search className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/45">A busca</p>
+                    <h4 className="text-sm font-black uppercase italic">COPA 2026</h4>
+                  </div>
+                </div>
+                <div className="rounded-xl bg-black/25 px-3 py-2 text-[10px] font-black">160 / 980</div>
+              </div>
+            </div>
+            <div className="p-4 space-y-3 bg-fifa-slate-50">
+              <div className="rounded-2xl bg-white border border-fifa-slate-100 p-3 shadow-sm">
+                <div className="h-8 rounded-xl bg-fifa-slate-100 flex items-center px-3 text-fifa-primary/25 text-xs font-bold">Busque...</div>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {['Especiais', 'Legends', 'Times'].map((item) => (
+                  <div key={item} className="rounded-xl bg-white border border-fifa-slate-100 px-3 py-2 text-center text-[10px] font-black uppercase tracking-widest text-fifa-primary">
+                    {item}
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {['Faltantes', 'Trocas'].map((item) => (
+                  <div key={item} className="rounded-xl bg-[#002772] text-white px-3 py-2 text-center text-[10px] font-black uppercase tracking-widest">
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      case 1:
+        return (
+          <div className="rounded-[2rem] border border-fifa-slate-100 bg-white shadow-[0_20px_60px_rgba(0,39,114,0.12)] overflow-hidden">
+            <div className="bg-gradient-to-r from-[#009b3a] to-[#2cbf6e] text-white px-4 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-xl bg-white/15 flex items-center justify-center">
+                    <Trophy className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/45">Coleção</p>
+                    <h4 className="text-sm font-black uppercase italic">Adicionar e repetir</h4>
+                  </div>
+                </div>
+                <div className="rounded-xl bg-black/20 px-3 py-2 text-[10px] font-black">4 / 20</div>
+              </div>
+            </div>
+            <div className="p-4 space-y-3 bg-fifa-slate-50">
+              <div className="rounded-2xl bg-white border border-fifa-slate-100 p-3">
+                <div className="flex items-center justify-between border-b border-fifa-slate-100 pb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="h-7 w-7 rounded-full bg-[#002772] text-white flex items-center justify-center text-[10px] font-black">BRA</div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase text-fifa-primary">Brasil</p>
+                      <p className="text-[9px] font-bold text-fifa-primary/35">1 de 20</p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-black text-fifa-primary/35">Completo</span>
+                </div>
+                <div className="grid grid-cols-5 gap-2 mt-3">
+                  {['1', '2', '3', '4', 'x2'].map((item, idx) => (
+                    <div key={idx} className={`aspect-[3/4] rounded-lg border-2 flex items-center justify-center text-[10px] font-black uppercase ${idx === 3 ? 'border-fifa-primary bg-fifa-primary/10 text-fifa-primary' : 'border-fifa-slate-100 bg-white text-fifa-primary/25'}`}>
+                      {item}
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-3 text-[10px] font-semibold text-fifa-primary/60">Toque uma vez para adicionar. Toque novamente para criar repetidas.</p>
+              </div>
+            </div>
+          </div>
+        );
+      case 2:
+        return (
+          <div className="rounded-[2rem] border border-fifa-slate-100 bg-white shadow-[0_20px_60px_rgba(0,39,114,0.12)] overflow-hidden">
+            <div className="bg-gradient-to-r from-[#8b0000] via-[#d1004d] to-[#6a0dad] text-white px-4 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-xl bg-white/15 flex items-center justify-center">
+                    <Copy className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/45">Proteção</p>
+                    <h4 className="text-sm font-black uppercase italic">Backup antes da limpeza</h4>
+                  </div>
+                </div>
+                <div className="rounded-xl bg-black/20 px-3 py-2 text-[10px] font-black">Backup</div>
+              </div>
+            </div>
+            <div className="p-4 space-y-3 bg-fifa-slate-50">
+              <div className="rounded-2xl bg-white border border-fifa-slate-100 p-3">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-fifa-primary/35">Dica importante</p>
+                <div className="mt-3 rounded-xl bg-fifa-primary/5 border border-fifa-primary/10 p-3 text-sm font-semibold text-fifa-primary/70">
+                  Antes de limpar a memória cache do navegador, faça um backup da coleção.
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <div className="rounded-xl bg-white border border-fifa-slate-100 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-fifa-primary">Copiar backup</div>
+                  <div className="rounded-xl bg-white border border-fifa-slate-100 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-fifa-primary">Importar depois</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      default:
+        return (
+          <div className="rounded-[2rem] border border-fifa-slate-100 bg-white shadow-[0_20px_60px_rgba(0,39,114,0.12)] overflow-hidden">
+            <div className="bg-gradient-to-r from-[#fedf00] via-[#f5b800] to-[#009b3a] text-fifa-primary px-4 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-xl bg-white/70 flex items-center justify-center">
+                    <CheckCircle2 className="h-4 w-4 text-fifa-primary" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-[0.3em] text-fifa-primary/45">Recompensa</p>
+                    <h4 className="text-sm font-black uppercase italic">Wallpapers liberados</h4>
+                  </div>
+                </div>
+                <div className="rounded-xl bg-white/60 px-3 py-2 text-[10px] font-black">3 etapas</div>
+              </div>
+            </div>
+            <div className="p-4 space-y-3 bg-fifa-slate-50">
+              <div className="grid grid-cols-3 gap-2">
+                {loadingImages.map((url, idx) => (
+                  <div key={url} className="rounded-2xl border border-fifa-slate-100 bg-white p-2">
+                    <img src={url} alt={`Wallpaper ${idx + 1}`} className="h-24 w-full rounded-xl object-cover" />
+                    <div className="mt-2 text-center text-[10px] font-black uppercase tracking-widest text-fifa-primary">
+                      {idx === 0 ? '1ª figura' : idx === 1 ? '25%' : '50%'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+    }
+  };
+
   return (
     <div className="min-h-screen bg-fifa-slate-50 pb-20 font-sans text-fifa-primary">
       <AnimatePresence mode="wait">
@@ -1190,7 +1367,7 @@ export default function App() {
                     <p className="text-[10px] font-black uppercase tracking-[0.3em] text-fifa-primary/35">Bem-vindo</p>
                     <h3 className="text-2xl md:text-3xl font-black text-fifa-primary uppercase tracking-tight">Como usar o app</h3>
                     <p className="text-sm md:text-base font-medium text-fifa-primary/65 max-w-xl">
-                      Este é um guia rápido para começar a organizar sua coleção sem perder tempo.
+                      Veja o fluxo principal em um carrossel rápido com telas simuladas do aplicativo.
                     </p>
                   </div>
                   <button
@@ -1203,42 +1380,66 @@ export default function App() {
                   </button>
                 </div>
 
-                <div className="mt-6 grid gap-3 md:grid-cols-2">
-                  {[
-                    { title: '1. Busque', text: 'Use a barra de busca para encontrar seleções, jogadores ou códigos rapidamente.', accent: 'from-[#002772] to-[#1b4fb8]', icon: Search },
-                    { title: '2. Adicione', text: 'Toque em uma figurinha para aumentar a coleção. Toque de novo para criar repetidas.', accent: 'from-[#009b3a] to-[#2cbf6e]', icon: Trophy },
-                    { title: '3. Filtre', text: 'Use Faltantes, Trocas e Ver todas para navegar pela coleção com mais velocidade.', accent: 'from-[#fedf00] to-[#f5b800]', icon: Filter },
-                    { title: '4. Backup', text: 'Copiar backup gera um texto fácil de compartilhar e importar de novo depois.', accent: 'from-[#8b0000] to-[#d1004d]', icon: Copy },
-                  ].map((step) => (
-                    <motion.div
-                      key={step.title}
-                      initial={{ opacity: 0, y: 14 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.35 }}
-                      className="relative overflow-hidden rounded-2xl border border-fifa-slate-100 bg-fifa-slate-50 px-4 py-4"
+                <div className="mt-6 space-y-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setTutorialSlide((prev) => (prev - 1 + tutorialSlides.length) % tutorialSlides.length)}
+                      className="rounded-2xl border border-fifa-slate-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-widest text-fifa-primary hover:bg-fifa-slate-50 transition-colors"
                     >
-                      <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${step.accent}`} />
-                      <div className="flex items-start gap-3">
-                        <div className={`shrink-0 h-11 w-11 rounded-2xl bg-gradient-to-br ${step.accent} flex items-center justify-center text-white shadow-lg`}>
-                          <step.icon className="h-5 w-5" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-fifa-primary/35">{step.title}</p>
-                          <p className="mt-2 text-sm md:text-[15px] font-semibold leading-relaxed text-fifa-primary/70">{step.text}</p>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
+                      Anterior
+                    </button>
+                    <div className="flex items-center gap-2">
+                      {tutorialSlides.map((slide, idx) => (
+                        <button
+                          key={slide.title}
+                          type="button"
+                          onClick={() => setTutorialSlide(idx)}
+                          className={`h-2.5 rounded-full transition-all ${idx === tutorialSlide ? 'w-8 bg-fifa-primary' : 'w-2.5 bg-fifa-slate-200'}`}
+                          aria-label={`Ir para o slide ${idx + 1}`}
+                        />
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setTutorialSlide((prev) => (prev + 1) % tutorialSlides.length)}
+                      className="rounded-2xl border border-fifa-slate-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-widest text-fifa-primary hover:bg-fifa-slate-50 transition-colors"
+                    >
+                      Próximo
+                    </button>
+                  </div>
 
-                <div className="mt-6 flex flex-col md:flex-row md:items-center md:justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={dismissTutorial}
-                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-fifa-primary px-5 py-3 text-sm font-black uppercase tracking-widest text-white shadow-lg shadow-fifa-primary/20 transition-transform active:scale-95"
+                  <motion.div
+                    key={tutorialSlide}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -12 }}
+                    transition={{ duration: 0.35 }}
+                    className="space-y-4"
                   >
-                    Começar agora
-                  </button>
+                    {renderTutorialPreview(tutorialSlide)}
+                    <div className="rounded-[1.75rem] border border-fifa-slate-100 bg-fifa-slate-50 p-5 md:p-6">
+                      <p className={`text-[10px] font-black uppercase tracking-[0.3em] bg-gradient-to-r ${tutorialSlides[tutorialSlide].accent} bg-clip-text text-transparent`}>
+                        {tutorialSlides[tutorialSlide].title}
+                      </p>
+                      <p className="mt-3 text-sm md:text-base font-semibold leading-relaxed text-fifa-primary/70">
+                        {tutorialSlides[tutorialSlide].description}
+                      </p>
+                    </div>
+                  </motion.div>
+
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <p className="text-[10px] font-black uppercase tracking-[0.28em] text-fifa-primary/30">
+                      Slide {tutorialSlide + 1} de {tutorialSlides.length}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={dismissTutorial}
+                      className="inline-flex items-center justify-center gap-2 rounded-2xl bg-fifa-primary px-5 py-3 text-sm font-black uppercase tracking-widest text-white shadow-lg shadow-fifa-primary/20 transition-transform active:scale-95"
+                    >
+                      Começar agora
+                    </button>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -1461,6 +1662,9 @@ export default function App() {
                     <CheckCircle2 className="h-5 w-5" />
                     Rever tutorial
                   </button>
+                  <p className="mt-3 text-[10px] font-semibold leading-relaxed text-fifa-primary/45">
+                    Se for limpar a memória cache do navegador, faça um backup antes para não perder a coleção.
+                  </p>
                 </div>
 
                 <div>
@@ -1534,7 +1738,7 @@ export default function App() {
                     <p className="text-[10px] font-black uppercase tracking-[0.3em] text-fifa-primary/35">Importar coleção</p>
                     <h3 className="mt-2 text-xl md:text-2xl font-black text-fifa-primary uppercase tracking-tight">Cole o texto do backup</h3>
                     <p className="mt-2 text-sm text-fifa-primary/55">
-                      Você pode colar o backup ou TXT exportado. O app mostra a quantidade encontrada antes de confirmar.
+                      Você pode colar o backup ou TXT exportado. Se for limpar a memória cache do navegador, faça um backup antes.
                     </p>
                   </div>
                   <button
