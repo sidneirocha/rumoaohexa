@@ -342,6 +342,22 @@ export default function App() {
     }
   };
 
+  const handleWallpaperAction = (url: string, index: number) => {
+    const thresholds = [1, 0.25, 0.5];
+    const required = thresholds[index] ?? 1;
+    const progress = officialStats.total > 0 ? officialStats.collected / officialStats.total : 0;
+    const unlocked = index === 0 ? officialStats.collected >= 1 : progress >= required;
+
+    if (!unlocked) {
+      const requiredText = index === 0 ? '1 figurinha' : `${Math.round(required * 100)}%`;
+      showToast(`Wallpaper bloqueado. Libera em ${requiredText}.`);
+      return;
+    }
+
+    showToast(`Baixando wallpaper ${index + 1}...`);
+    void downloadWallpaper(url, `wallpaper-${index + 1}.webp`);
+  };
+
   useEffect(() => {
     localStorage.setItem('sticker-collection', JSON.stringify(collection));
   }, [collection]);
@@ -1452,15 +1468,17 @@ export default function App() {
                   <div className="grid grid-cols-3 gap-3">
                     {loadingImages.map((url, index) => (
                       (() => {
-                        const unlockProgress = (index + 1) / 3;
-                        const unlocked = officialStats.collected / officialStats.total >= unlockProgress;
-                        const label = unlocked ? `Baixar ${index + 1}` : `Bloqueado ${index + 1}/3`;
+                        const thresholds = [1, 0.25, 0.5];
+                        const required = thresholds[index] ?? 1;
+                        const progress = officialStats.total > 0 ? officialStats.collected / officialStats.total : 0;
+                        const unlocked = index === 0 ? officialStats.collected >= 1 : progress >= required;
+                        const label = unlocked ? `Baixar ${index + 1}` : `Bloqueado ${index + 1}`;
 
                         return (
                       <button
                         key={url}
                         type="button"
-                        onClick={() => unlocked && downloadWallpaper(url, `wallpaper-${index + 1}.webp`)}
+                        onClick={() => handleWallpaperAction(url, index)}
                         disabled={!unlocked}
                         className={`relative flex flex-col items-center justify-center gap-2 rounded-2xl border-2 py-4 transition-all ${
                           unlocked
@@ -1478,7 +1496,7 @@ export default function App() {
                         <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
                         {!unlocked && (
                           <span className="absolute inset-0 flex items-end justify-center pb-3 text-[9px] font-black uppercase tracking-[0.25em] text-fifa-primary/35">
-                            {Math.round(unlockProgress * 100)}%
+                            {index === 0 ? '1' : `${Math.round(required * 100)}%`}
                           </span>
                         )}
                       </button>
