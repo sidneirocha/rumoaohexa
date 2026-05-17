@@ -118,6 +118,8 @@ export default function App() {
     return localStorage.getItem('onboarding-dismissed') === 'true';
   });
   const celebrationTriggeredRef = useRef(false);
+  const firstWallpaperPopupSeenRef = useRef(false);
+  const previousOfficialCollectedRef = useRef<number | null>(null);
   const pendingGroupScrollRef = useRef<string | null>(null);
   const groupFirstCountryRefs = useRef<Record<string, HTMLElement | null>>({});
 
@@ -183,6 +185,10 @@ export default function App() {
   }, [isLoading, tutorialDismissed]);
 
   useEffect(() => {
+    firstWallpaperPopupSeenRef.current = localStorage.getItem('first-wallpaper-unlocked-shown') === 'true';
+  }, []);
+
+  useEffect(() => {
     if (showTutorial) {
       setTutorialSlide(0);
     }
@@ -237,6 +243,7 @@ export default function App() {
   const [exportPreview, setExportPreview] = useState<{ type: 'missing' | 'duplicates'; stickers: Sticker[] } | null>(null);
   const [showImportModal, setShowImportModal] = useState(false);
   const [importText, setImportText] = useState('');
+  const [showFirstWallpaperUnlock, setShowFirstWallpaperUnlock] = useState(false);
 
   const scrollToSection = (id: string) => {
     const el = document.getElementById(id);
@@ -321,6 +328,10 @@ export default function App() {
     localStorage.setItem('onboarding-dismissed', 'true');
   };
 
+  const dismissFirstWallpaperUnlock = () => {
+    setShowFirstWallpaperUnlock(false);
+  };
+
   const reopenTutorial = () => {
     setShowSettings(false);
     setShowTutorial(true);
@@ -384,6 +395,11 @@ export default function App() {
 
     showToast(`Baixando wallpaper ${index + 1}...`, 'success');
     void downloadWallpaper(url, `wallpaper-${index + 1}.webp`);
+  };
+
+  const openFirstWallpaperDownload = () => {
+    setShowFirstWallpaperUnlock(false);
+    void handleWallpaperAction(loadingImages[0], 0);
   };
 
   useEffect(() => {
@@ -520,6 +536,26 @@ export default function App() {
     celebrationTriggeredRef.current = false;
     setShowCompletionCelebration(false);
   }, [officialStats.collected, officialStats.total]);
+
+  useEffect(() => {
+    const previousCollected = previousOfficialCollectedRef.current;
+    if (previousCollected === null) {
+      previousOfficialCollectedRef.current = officialStats.collected;
+      return;
+    }
+
+    if (
+      !firstWallpaperPopupSeenRef.current &&
+      previousCollected === 0 &&
+      officialStats.collected >= 1
+    ) {
+      firstWallpaperPopupSeenRef.current = true;
+      localStorage.setItem('first-wallpaper-unlocked-shown', 'true');
+      setShowFirstWallpaperUnlock(true);
+    }
+
+    previousOfficialCollectedRef.current = officialStats.collected;
+  }, [officialStats.collected]);
 
   const updateStickerCount = (id: string, delta: number) => {
     setCollection((prev) => {
@@ -1497,6 +1533,87 @@ export default function App() {
                     >
                       Começar agora
                     </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showFirstWallpaperUnlock && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-8">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={dismissFirstWallpaperUnlock}
+              className="absolute inset-0 bg-black/75 backdrop-blur-xl"
+            />
+            <motion.div
+              initial={{ scale: 0.94, opacity: 0, y: 18 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.94, opacity: 0, y: 18 }}
+              className="relative w-full max-w-xl overflow-hidden rounded-[2rem] border border-white/10 bg-white shadow-2xl"
+            >
+              <div className="h-1 w-full bg-gradient-to-r from-fifa-accent via-fifa-cyan to-fifa-peach" />
+              <div className="p-6 md:p-8">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-fifa-primary/35">Recompensa liberada</p>
+                    <h3 className="text-2xl md:text-3xl font-black text-fifa-primary uppercase tracking-tight">
+                      Primeiro wallpaper desbloqueado
+                    </h3>
+                    <p className="text-sm md:text-base font-medium text-fifa-primary/65 max-w-xl">
+                      Você cadastrou sua primeira figurinha e liberou o primeiro wallpaper da coleção.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={dismissFirstWallpaperUnlock}
+                    className="p-2 hover:bg-fifa-slate-100 rounded-full transition-colors"
+                    aria-label="Fechar aviso de wallpaper"
+                  >
+                    <X className="h-6 w-6 text-fifa-primary/40" />
+                  </button>
+                </div>
+
+                <div className="mt-6 grid gap-5 md:grid-cols-[180px_1fr] md:items-center">
+                  <div className="rounded-[1.75rem] border border-fifa-slate-100 bg-fifa-slate-50 p-4">
+                    <div className="overflow-hidden rounded-[1.35rem] bg-white shadow-sm">
+                      <img
+                        src={loadingImages[0]}
+                        alt="Wallpaper desbloqueado"
+                        className="h-44 w-full object-cover"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="rounded-[1.5rem] border border-[#009b3a]/15 bg-[#009b3a]/8 p-4">
+                      <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#009b3a]">Liberado agora</p>
+                      <p className="mt-2 text-sm md:text-base font-semibold leading-relaxed text-fifa-primary/75">
+                        Baixe o wallpaper 1 para comemorar o início da coleção.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col md:flex-row gap-3 md:justify-end">
+                      <button
+                        type="button"
+                        onClick={dismissFirstWallpaperUnlock}
+                        className="rounded-2xl border border-fifa-slate-200 px-5 py-3 text-sm font-black uppercase tracking-widest text-fifa-primary hover:bg-fifa-slate-50 transition-colors"
+                      >
+                        Depois
+                      </button>
+                      <button
+                        type="button"
+                        onClick={openFirstWallpaperDownload}
+                        className="rounded-2xl bg-fifa-primary px-5 py-3 text-sm font-black uppercase tracking-widest text-white shadow-lg shadow-fifa-primary/20 transition-transform active:scale-95"
+                      >
+                        Baixar wallpaper
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
