@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo, ReactNode, useRef } from 'react';
+import React, { useState, useEffect, useMemo, ReactNode } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import confetti from 'canvas-confetti';
@@ -37,6 +37,49 @@ const sanitizeCollection = (value: unknown): Collection => {
 
     return acc;
   }, {});
+};
+
+const parseMarkdownCollection = (content: string): Collection | null => {
+  const lines = content.split(/\r?\n/);
+  const parsed = lines.reduce<Collection>((acc, line) => {
+    const match = line.trim().match(/^[-*]\s*([A-Za-z0-9_-]+)\s*:\s*(\d+)$/);
+    if (!match) return acc;
+
+    const [, id, countText] = match;
+    const count = Number(countText);
+    if (Number.isFinite(count) && count > 0) {
+      acc[id] = Math.floor(count);
+    }
+    return acc;
+  }, {});
+
+  return Object.keys(parsed).length > 0 ? parsed : null;
+};
+
+const normalizeImportedCollection = (raw: string): Collection | null => {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+
+  try {
+    const value = JSON.parse(trimmed);
+    const candidate =
+      value && typeof value === 'object' && !Array.isArray(value)
+        ? ('collection' in value && value.collection && typeof value.collection === 'object'
+            ? value.collection
+            : ('data' in value && value.data && typeof value.data === 'object'
+                ? value.data
+                : value))
+        : null;
+
+    if (candidate && !Array.isArray(candidate)) {
+      const normalized = sanitizeCollection(candidate);
+      return Object.keys(normalized).length > 0 ? normalized : null;
+    }
+  } catch {
+    // Not JSON, fall through to Markdown/TXT parsing.
+  }
+
+  return parseMarkdownCollection(trimmed);
 };
 
 export default function App() {
@@ -148,6 +191,8 @@ export default function App() {
   const [toastMessage, setToastMessage] = useState("");
   const [showSettings, setShowSettings] = useState(false);
   const [exportPreview, setExportPreview] = useState<{ type: 'missing' | 'duplicates'; stickers: Sticker[] } | null>(null);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importText, setImportText] = useState('');
 
   const scrollToSection = (id: string) => {
     const el = document.getElementById(id);
@@ -437,74 +482,31 @@ export default function App() {
     showToast("Markdown exportado com sucesso!");
   };
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const importedPreview = useMemo(() => normalizeImportedCollection(importText), [importText]);
+  const importedDistinctCount = importedPreview ? Object.keys(importedPreview).length : 0;
+  const importedTotalCount = importedPreview
+    ? Object.values(importedPreview).reduce((sum, count) => sum + count, 0)
+    : 0;
 
-  const parseMarkdownCollection = (content: string): Collection | null => {
-    const lines = content.split(/\r?\n/);
-    const parsed = lines.reduce<Collection>((acc, line) => {
-      const match = line.trim().match(/^[-*]\s*([A-Za-z0-9_-]+)\s*:\s*(\d+)$/);
-      if (!match) return acc;
-
-      const [, id, countText] = match;
-      const count = Number(countText);
-      if (Number.isFinite(count) && count > 0) {
-        acc[id] = Math.floor(count);
-      }
-      return acc;
-    }, {});
-
-    return Object.keys(parsed).length > 0 ? parsed : null;
+  const openImportModal = () => {
+    setImportText('');
+    setShowImportModal(true);
   };
 
-  const normalizeImportedCollection = (raw: string): Collection | null => {
-    const trimmed = raw.trim();
-    if (!trimmed) return null;
+  const closeImportModal = () => {
+    setShowImportModal(false);
+    setImportText('');
+  };
 
-    try {
-      const value = JSON.parse(trimmed);
-      const candidate =
-        value && typeof value === 'object' && !Array.isArray(value)
-          ? ('collection' in value && value.collection && typeof value.collection === 'object'
-              ? value.collection
-              : ('data' in value && value.data && typeof value.data === 'object'
-                  ? value.data
-                  : value))
-          : null;
-
-      if (candidate && !Array.isArray(candidate)) {
-        const normalized = sanitizeCollection(candidate);
-        return Object.keys(normalized).length > 0 ? normalized : null;
-      }
-    } catch {
-      // Not JSON, fall through to Markdown/TXT parsing.
+  const confirmImportText = () => {
+    if (!importedPreview) {
+      showToast("Cole um JSON, MD ou TXT válido antes de importar.");
+      return;
     }
 
-    return parseMarkdownCollection(trimmed);
-  };
-
-  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const input = event.currentTarget;
-    const file = input.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const raw = String(e.target?.result ?? '');
-        const importedCollection = normalizeImportedCollection(raw);
-        if (importedCollection) {
-          setCollection(importedCollection);
-          showToast("Dados importados com sucesso!");
-        } else {
-          showToast("O arquivo precisa estar em JSON, Markdown ou TXT válido.");
-        }
-      } catch (err) {
-        showToast("Erro ao importar arquivo.");
-      }
-      // Reset value to allow re-importing the same file
-      input.value = '';
-    };
-    reader.readAsText(file);
+    setCollection(importedPreview);
+    showToast(`Importados ${importedTotalCount} itens em ${importedDistinctCount} códigos.`);
+    closeImportModal();
   };
 
   const getFilteredStickers = (stickers: Sticker[]) => {
@@ -1115,20 +1117,13 @@ export default function App() {
                       <span className="text-[10px] font-black uppercase tracking-widest">Exportar MD</span>
                     </button>
                     <button 
-                      onClick={() => fileInputRef.current?.click()}
+                      onClick={openImportModal}
                       className="flex flex-col items-center justify-center gap-3 py-6 bg-fifa-slate-50 border-2 border-fifa-slate-100 rounded-2xl hover:border-fifa-primary transition-all group cursor-pointer"
                     >
                       <div className="p-3 bg-white rounded-xl shadow-sm group-hover:bg-fifa-primary group-hover:text-white transition-colors">
                         <Copy className="h-5 w-5" />
                       </div>
                       <span className="text-[10px] font-black uppercase tracking-widest">Importar</span>
-                      <input 
-                        type="file" 
-                        ref={fileInputRef}
-                        accept=".json,.md,.txt" 
-                        onChange={handleImport} 
-                        className="hidden" 
-                      />
                     </button>
                   </div>
                 </div>
@@ -1154,6 +1149,96 @@ export default function App() {
 
                 <div className="pt-6 border-t border-fifa-slate-100">
                    <p className="text-[10px] text-fifa-primary/40 font-bold text-center uppercase tracking-widest">Controlador Oficial do Álbum da Copa 2026</p>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showImportModal && (
+          <div className="fixed inset-0 z-[170] flex items-center justify-center p-4 md:p-8">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={closeImportModal}
+              className="absolute inset-0 bg-black/60 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ scale: 0.96, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.96, opacity: 0, y: 20 }}
+              className="relative w-full max-w-2xl rounded-[2rem] bg-white shadow-2xl overflow-hidden border border-fifa-slate-100"
+            >
+              <div className="h-1 w-full bg-gradient-to-r from-fifa-accent via-fifa-cyan to-fifa-peach" />
+              <div className="p-6 md:p-8 space-y-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-fifa-primary/35">Importar coleção</p>
+                    <h3 className="mt-2 text-xl md:text-2xl font-black text-fifa-primary uppercase tracking-tight">Cole o texto do MD</h3>
+                    <p className="mt-2 text-sm text-fifa-primary/55">
+                      Você pode colar o Markdown, JSON ou TXT exportado. O app mostra a quantidade encontrada antes de confirmar.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={closeImportModal}
+                    className="p-2 hover:bg-fifa-slate-100 rounded-full transition-colors"
+                    aria-label="Fechar importação"
+                  >
+                    <X className="h-6 w-6 text-fifa-primary/40" />
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  <textarea
+                    value={importText}
+                    onChange={(e) => setImportText(e.target.value)}
+                    placeholder={`# Stickers Copa 26\n\n## Coleção\n- BRA10: 2\n- ARG5: 1`}
+                    className="min-h-56 w-full rounded-3xl border-2 border-fifa-slate-100 bg-fifa-slate-50 px-4 py-4 text-sm font-medium text-fifa-primary outline-none transition-colors focus:border-fifa-primary/40 focus:bg-white"
+                  />
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="rounded-2xl border border-fifa-slate-100 bg-fifa-slate-50 px-4 py-3">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-fifa-primary/35">Códigos</p>
+                      <p className="mt-1 text-2xl font-black text-fifa-primary">{importedDistinctCount}</p>
+                    </div>
+                    <div className="rounded-2xl border border-fifa-slate-100 bg-fifa-slate-50 px-4 py-3">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-fifa-primary/35">Total</p>
+                      <p className="mt-1 text-2xl font-black text-fifa-primary">{importedTotalCount}</p>
+                    </div>
+                    <div className="rounded-2xl border border-fifa-slate-100 bg-fifa-slate-50 px-4 py-3">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-fifa-primary/35">Status</p>
+                      <p className="mt-1 text-sm font-black text-fifa-primary uppercase">
+                        {importedPreview ? 'Pronto para importar' : 'Aguardando texto válido'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {importText.trim() && !importedPreview && (
+                    <p className="text-sm font-bold text-red-600">
+                      Não reconheci esse texto. Cole um MD/JSON/TXT exportado pelo app.
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex flex-col md:flex-row gap-3 md:justify-end pt-2">
+                  <button
+                    type="button"
+                    onClick={closeImportModal}
+                    className="rounded-2xl border border-fifa-slate-200 px-5 py-3 text-sm font-black uppercase tracking-widest text-fifa-primary hover:bg-fifa-slate-50 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={confirmImportText}
+                    disabled={!importedPreview}
+                    className="rounded-2xl bg-fifa-primary px-5 py-3 text-sm font-black uppercase tracking-widest text-white shadow-lg shadow-fifa-primary/20 transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Importar {importedTotalCount > 0 ? `(${importedTotalCount})` : ''}
+                  </button>
                 </div>
               </div>
             </motion.div>
