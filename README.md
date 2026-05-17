@@ -10,12 +10,6 @@ O app abre com uma tela de impacto visual antes de liberar o painel principal. E
 | --- | --- | --- |
 | ![Loading 1](album.jpeg) | ![Loading 2](figurinha.jpeg) | ![Loading 3](taca2.jpg) |
 
-Imagens extras usadas no tema visual:
-
-| Detalhe 1 | Detalhe 2 |
-| --- | --- |
-| ![Detalhe 1](magnific__faa-uma-verso-agora-ele-levantando-a-taa-com-confe__92019.jpeg) | ![Detalhe 2](magnific__una-as-imagens-faa-o-personagem-segurar-a-taa-na-a__92020.jpeg) |
-
 ## Como o sistema funciona
 
 O app foi desenhado como um painel único de controle da coleção:
