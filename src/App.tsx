@@ -427,8 +427,26 @@ export default function App() {
     return { total, collected, percentage, duplicates };
   }, [allStickers, collection]);
 
+  const officialStats = useMemo(() => {
+    const baseOfficialTotal = allStickers.filter((sticker) => sticker.teamCode !== 'EXTRA' && sticker.teamCode !== 'CC').length;
+    const legendsOfficialTotal = LEGENDS_PLAYERS.length;
+    const total = baseOfficialTotal + legendsOfficialTotal;
+
+    const baseOfficialCollected = allStickers.filter(
+      (sticker) => sticker.teamCode !== 'EXTRA' && sticker.teamCode !== 'CC' && (collection[sticker.id] || 0) > 0
+    ).length;
+    const legendsCollected = LEGENDS_PLAYERS.filter((player) =>
+      LEGENDS_VARIANTS.some((variant) => (collection[`LEG-${player.code}-${variant.toUpperCase()}`] || 0) > 0)
+    ).length;
+
+    const collected = baseOfficialCollected + legendsCollected;
+    const percentage = Math.round((collected / total) * 100);
+
+    return { total, collected, percentage };
+  }, [allStickers, collection]);
+
   useEffect(() => {
-    if (stats.total > 0 && stats.collected === stats.total) {
+    if (officialStats.total > 0 && officialStats.collected === officialStats.total) {
       if (celebrationTriggeredRef.current) return;
 
       celebrationTriggeredRef.current = true;
@@ -464,7 +482,7 @@ export default function App() {
 
     celebrationTriggeredRef.current = false;
     setShowCompletionCelebration(false);
-  }, [stats.collected, stats.total]);
+  }, [officialStats.collected, officialStats.total]);
 
   const updateStickerCount = (id: string, delta: number) => {
     setCollection((prev) => {
@@ -834,7 +852,7 @@ export default function App() {
             <div className="flex items-center gap-2 shrink-0">
               <div className="bg-black/40 backdrop-blur-xl px-2.5 py-1.5 md:px-6 md:py-3 rounded-xl border border-white/10 flex items-center gap-2 md:gap-4 shadow-xl">
                 <div className="flex flex-col items-center md:items-end">
-                  <span className="text-xs md:text-3xl font-black text-white italic leading-none">{stats.collected}<span className="text-white/30 text-[8px] md:text-lg not-italic ml-1">/ {stats.total}</span></span>
+                  <span className="text-xs md:text-3xl font-black text-white italic leading-none">{officialStats.collected}<span className="text-white/30 text-[8px] md:text-lg not-italic ml-1">/ {officialStats.total}</span></span>
                   <span className="hidden md:block text-[6px] md:text-[8px] font-black text-fifa-accent uppercase tracking-[0.2em] mt-0.5">Figurinhas Coletadas</span>
                 </div>
                 <div className="w-[1px] h-4 md:h-10 bg-white/10" />
@@ -899,14 +917,14 @@ export default function App() {
 
         {/* Global Progress Strip */}
         <div className="h-6 md:h-8 w-full bg-black/40 relative overflow-hidden flex items-center">
-          <motion.div 
+          <motion.div
             initial={{ width: 0 }}
-            animate={{ width: `${stats.percentage}%` }}
+            animate={{ width: `${officialStats.percentage}%` }}
             className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#009b3a] via-[#fedf00] to-[#009b3a] shadow-[0_0_20px_rgba(254,223,0,0.3)]"
           />
           <div className="relative w-full flex justify-center items-center">
             <span className="text-[10px] md:text-xs font-black uppercase italic tracking-[0.3em] text-white drop-shadow-md">
-              Progresso do Álbum: {stats.percentage}%
+              Progresso do Álbum: {officialStats.percentage}%
             </span>
           </div>
         </div>
@@ -1440,17 +1458,39 @@ export default function App() {
                   <h4 className="text-[10px] font-black uppercase text-fifa-primary/40 tracking-[0.2em] mb-4">Wallpapers</h4>
                   <div className="grid grid-cols-3 gap-3">
                     {loadingImages.map((url, index) => (
+                      (() => {
+                        const unlockProgress = (index + 1) / 3;
+                        const unlocked = officialStats.collected / officialStats.total >= unlockProgress;
+                        const label = unlocked ? `Baixar ${index + 1}` : `Bloqueado ${index + 1}/3`;
+
+                        return (
                       <button
                         key={url}
                         type="button"
-                        onClick={() => downloadWallpaper(url, `wallpaper-${index + 1}.webp`)}
-                        className="flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-fifa-slate-100 bg-fifa-slate-50 py-4 hover:border-fifa-primary transition-all"
+                        onClick={() => unlocked && downloadWallpaper(url, `wallpaper-${index + 1}.webp`)}
+                        disabled={!unlocked}
+                        className={`relative flex flex-col items-center justify-center gap-2 rounded-2xl border-2 py-4 transition-all ${
+                          unlocked
+                            ? 'border-fifa-slate-100 bg-fifa-slate-50 hover:border-fifa-primary'
+                            : 'border-fifa-slate-100 bg-fifa-slate-50/70 opacity-60 grayscale cursor-not-allowed'
+                        }`}
                       >
                         <div className="h-12 w-12 overflow-hidden rounded-xl bg-white shadow-sm">
-                          <img src={url} alt={`Wallpaper ${index + 1}`} className="h-full w-full object-cover" />
+                          <img
+                            src={url}
+                            alt={`Wallpaper ${index + 1}`}
+                            className={`h-full w-full object-cover ${unlocked ? '' : 'blur-[1px]'}`}
+                          />
                         </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest">Baixar {index + 1}</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
+                        {!unlocked && (
+                          <span className="absolute inset-0 flex items-end justify-center pb-3 text-[9px] font-black uppercase tracking-[0.25em] text-fifa-primary/35">
+                            {Math.round(unlockProgress * 100)}%
+                          </span>
+                        )}
                       </button>
+                        );
+                      })()
                     ))}
                   </div>
                 </div>
@@ -1580,7 +1620,7 @@ export default function App() {
                       Álbum completo
                     </h3>
                     <p className="text-sm md:text-base font-semibold text-fifa-primary/60 max-w-md mx-auto">
-                      Você completou toda a coleção Stickers Copa 26.
+                      Você completou as 1000 figurinhas oficiais da coleção Stickers Copa 26.
                     </p>
                   </div>
                   <button
