@@ -652,7 +652,8 @@ export default function App() {
 
             {/* Middle Section: Search Bar - Filling the space on Desktop */}
             <div className="hidden md:block flex-1 max-w-2xl group mx-4">
-              <div className="relative">
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30 group-focus-within:text-fifa-accent transition-colors" />
                 <input
                   type="text"
@@ -661,6 +662,16 @@ export default function App() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-3 text-sm font-bold italic focus:outline-none focus:ring-2 focus:ring-fifa-accent/30 transition-all placeholder:text-white/20 hover:bg-white/10"
                 />
+                </div>
+                {searchQuery.trim() && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="shrink-0 rounded-xl border border-white/10 bg-white/10 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-white hover:bg-white/20 transition-colors"
+                  >
+                    Ver todas
+                  </button>
+                )}
               </div>
             </div>
 
@@ -684,15 +695,26 @@ export default function App() {
 
           <div className="mt-3 md:mt-4 flex flex-col md:flex-row items-center gap-3">
             {/* Mobile Search */}
-            <div className="md:hidden relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/30" />
-              <input
-                type="text"
-                placeholder="Busque..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white/10 border border-white/10 rounded-xl py-2 pl-10 pr-3 text-xs font-bold italic focus:outline-none transition-all placeholder:text-white/20"
-              />
+            <div className="md:hidden flex items-center gap-2 w-full">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/30" />
+                <input
+                  type="text"
+                  placeholder="Busque..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-white/10 border border-white/10 rounded-xl py-2 pl-10 pr-3 text-xs font-bold italic focus:outline-none transition-all placeholder:text-white/20"
+                />
+              </div>
+              {searchQuery.trim() && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="shrink-0 rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white hover:bg-white/20 transition-colors"
+                >
+                  Limpar
+                </button>
+              )}
             </div>
 
             <nav className="flex items-center justify-center gap-1.5 md:gap-2 w-full md:w-auto">
