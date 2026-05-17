@@ -495,7 +495,7 @@ export default function App() {
     ).map(([groupKey, stickers]) => {
       const first = stickers[0];
       const labels = first?.teamCode === 'EXTRA' && type === 'missing'
-        ? LEGENDS_VARIANTS.map((variant) => variant)
+        ? stickers.map((sticker) => sticker.variant || sticker.number).filter(Boolean)
         : stickers.map((sticker) => {
             const count = collection[sticker.id] || 0;
             let label = sticker.number;
