@@ -285,23 +285,60 @@ export default function App() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const normalizeImportedCollection = (value: unknown): Collection | null => {
+    const candidate =
+      value && typeof value === 'object' && !Array.isArray(value)
+        ? ('collection' in value && value.collection && typeof value.collection === 'object'
+            ? value.collection
+            : ('data' in value && value.data && typeof value.data === 'object'
+                ? value.data
+                : value))
+        : null;
+
+    if (!candidate || Array.isArray(candidate)) {
+      return null;
+    }
+
+    const entries = Object.entries(candidate as Record<string, unknown>);
+    const normalized = entries.reduce<Collection>((acc, [key, rawValue]) => {
+      const nextValue =
+        typeof rawValue === 'number'
+          ? rawValue
+          : typeof rawValue === 'string'
+            ? Number(rawValue)
+            : Number.NaN;
+
+      if (Number.isFinite(nextValue) && nextValue >= 0) {
+        acc[key] = Math.floor(nextValue);
+      }
+
+      return acc;
+    }, {});
+
+    return Object.keys(normalized).length > 0 ? normalized : null;
+  };
+
   const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+    const input = event.currentTarget;
+    const file = input.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
         const json = JSON.parse(e.target?.result as string);
-        if (typeof json === 'object' && json !== null) {
-          setCollection(json);
+        const importedCollection = normalizeImportedCollection(json);
+        if (importedCollection) {
+          setCollection(importedCollection);
           showToast("Dados importados com sucesso!");
+        } else {
+          showToast("O arquivo JSON não tem o formato esperado.");
         }
       } catch (err) {
         showToast("Erro ao importar arquivo JSON.");
       }
       // Reset value to allow re-importing the same file
-      if (event.target) event.target.value = '';
+      input.value = '';
     };
     reader.readAsText(file);
   };
