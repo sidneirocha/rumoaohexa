@@ -495,14 +495,28 @@ export default function App() {
     ];
 
     const dataStr = lines.join('\n');
-    const dataUri = 'data:text/markdown;charset=utf-8,' + encodeURIComponent(dataStr);
-    const exportFileDefaultName = `colecao-copa-2026-${new Date().toISOString().split('T')[0]}.md`;
+    const copyMarkdown = async () => {
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(dataStr);
+        } else {
+          const textarea = document.createElement('textarea');
+          textarea.value = dataStr;
+          textarea.setAttribute('readonly', 'true');
+          textarea.style.position = 'fixed';
+          textarea.style.opacity = '0';
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          textarea.remove();
+        }
+        showToast("Markdown copiado para a área de transferência!");
+      } catch {
+        showToast("Não foi possível copiar o Markdown.");
+      }
+    };
 
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
-    showToast("Markdown exportado com sucesso!");
+    void copyMarkdown();
   };
 
   const importedPreview = useMemo(() => normalizeImportedCollection(importText), [importText]);
@@ -1159,7 +1173,7 @@ export default function App() {
                       <div className="p-3 bg-white rounded-xl shadow-sm group-hover:bg-fifa-primary group-hover:text-white transition-colors">
                         <Share2 className="h-5 w-5" />
                       </div>
-                      <span className="text-[10px] font-black uppercase tracking-widest">Exportar MD</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest">Copiar MD</span>
                     </button>
                     <button 
                       onClick={openImportModal}
