@@ -454,7 +454,18 @@ export default function App() {
   };
 
   const exportData = () => {
-    const dataStr = JSON.stringify(sanitizeCollection(collection), null, 2);
+    const snapshot = {
+      app: 'Stickers Copa 26',
+      version: '1.2',
+      timestamp: new Date().toISOString(),
+      stats,
+      collection: allStickers.reduce<Record<string, boolean>>((acc, sticker) => {
+        acc[sticker.id] = (collection[sticker.id] || 0) > 0;
+        return acc;
+      }, {}),
+    };
+
+    const dataStr = JSON.stringify(snapshot, null, 2);
     const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
     
     const exportFileDefaultName = `colecao-copa-2026-${new Date().toISOString().split('T')[0]}.json`;
