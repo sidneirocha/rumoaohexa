@@ -56,12 +56,13 @@ export default function App() {
   });
 
   const LOADING_IMAGES = [
-    "https://raw.githubusercontent.com/sidneirocha/rumoaohexa/c71ad64023daf692e0c2f90931fbbbc1bb51fd45/album.jpeg",
-    "https://raw.githubusercontent.com/sidneirocha/rumoaohexa/c71ad64023daf692e0c2f90931fbbbc1bb51fd45/figurinha.jpeg",
-    "https://raw.githubusercontent.com/sidneirocha/rumoaohexa/c71ad64023daf692e0c2f90931fbbbc1bb51fd45/taca2.jpg"
+    "https://raw.githubusercontent.com/sidneirocha/stickerscopa26/99fab2db99f5941e3a573be4c30def3eedbb17d8/wp1.webp",
+    "https://raw.githubusercontent.com/sidneirocha/stickerscopa26/99fab2db99f5941e3a573be4c30def3eedbb17d8/wp2.webp",
+    "https://raw.githubusercontent.com/sidneirocha/stickerscopa26/99fab2db99f5941e3a573be4c30def3eedbb17d8/wp3.webp"
   ];
 
   const randomImage = useMemo(() => LOADING_IMAGES[Math.floor(Math.random() * LOADING_IMAGES.length)], []);
+  const loadingImages = useMemo(() => LOADING_IMAGES, []);
   const isIOS = useMemo(() => {
     if (typeof window === 'undefined') return false;
     return /iPad|iPhone|iPod/.test(window.navigator.userAgent) && !(window as Window & { MSStream?: unknown }).MSStream;
@@ -212,6 +213,29 @@ export default function App() {
     }
 
     showToast('Use o menu do navegador para instalar o app');
+  };
+
+  const downloadWallpaper = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Unable to fetch wallpaper');
+      }
+
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(objectUrl);
+      showToast('Wallpaper baixado com sucesso!');
+    } catch (error) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+      showToast('Abrindo wallpaper em nova aba.');
+    }
   };
 
   useEffect(() => {
@@ -480,87 +504,21 @@ export default function App() {
               className="absolute inset-0 flex items-center justify-center overflow-hidden"
             >
               <div className="relative w-full h-full flex items-center justify-center">
-                <img 
-                  src={randomImage} 
-                  alt="Brasil Hexa" 
-                  className="w-full h-full object-contain"
+                <img
+                  src={randomImage}
+                  alt="Wallpaper de loading"
+                  className="w-full h-full object-cover"
                 />
-                {/* FIFA Style Fading Edges - Softened */}
-                <div className="absolute inset-0 shadow-[inset_0_0_60px_10px_#009739] hidden md:block" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#009739]/40 via-transparent to-[#009739]/40 hidden md:block" />
-                <div className="absolute inset-0 bg-gradient-to-r from-[#009739]/20 via-transparent to-[#009739]/20 hidden md:block" />
               </div>
-              {/* Refined Overlays - Softened for Desktop */}
-              <div className="absolute inset-0 bg-transparent" />
-              <div className="absolute inset-0 bg-gradient-to-b from-[#009739]/30 via-transparent to-[#009739]/60 hidden md:block" />
-              
-              {/* Scanline Effect */}
-              <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%)] bg-[length:100%_4px]" />
             </motion.div>
 
             {/* Content Container - Pushed to bottom */}
-            <div className="relative z-10 w-full flex flex-col justify-end items-center flex-1 pb-12 md:pb-20">
-              {/* Lettering */}
-              <div className="w-full max-w-lg lg:max-w-4xl px-8 flex flex-col items-center justify-center mb-8">
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.3, type: "spring", stiffness: 100 }}
-                  className="text-center"
-                >
-                  <motion.h2 
-                    animate={{ 
-                      scale: [1, 1.05, 1],
-                      textShadow: [
-                        "0 0 20px rgba(254,223,0,0.3)",
-                        "0 0 40px rgba(254,223,0,0.6)",
-                        "0 0 20px rgba(254,223,0,0.3)"
-                      ]
-                    }}
-                    transition={{ duration: 3, repeat: Infinity }}
-                    className="text-6xl md:text-8xl lg:text-9xl font-black uppercase italic tracking-tighter text-[#fedf00] leading-[0.85]"
-                  >
-                    RUMO AO <br/> <span className="text-white">HEXA</span>
-                  </motion.h2>
-                </motion.div>
-              </div>
-
-              {/* Loading bar */}
-              <div className="w-full max-w-md px-8 flex flex-col items-center gap-4">
-                <div className="flex flex-col items-center gap-2">
-                  <p className="text-[#fedf00] font-black text-xs md:text-sm uppercase tracking-[0.6em] animate-pulse drop-shadow-[0_0_10px_rgba(254,223,0,0.5)]">
-                    Carregando Álbum
-                  </p>
-                  <div className="h-1 w-12 bg-[#009b3a] rounded-full" />
-                </div>
-                
-                <div className="relative w-full">
-                  {/* Progress Bar Container */}
-                  <div className="relative w-full h-5 md:h-7 bg-black/70 rounded-full p-1 backdrop-blur-3xl border-2 border-white/30 shadow-[0_0_30px_rgba(0,0,0,0.5),inset_0_0_10px_rgba(255,255,255,0.1)]">
-                    <motion.div 
-                      initial={{ width: "0%" }}
-                      animate={{ width: "100%" }}
-                      transition={{ duration: 4, ease: "easeInOut" }}
-                      className="h-full bg-gradient-to-r from-[#009b3a] via-[#fedf00] to-[#009b3a] bg-[length:200%_100%] animate-shimmer rounded-full shadow-[0_0_20px_rgba(254,223,0,0.6)] relative overflow-visible"
-                    >
-                      {/* Soccer Ball - Fixed to the leading edge of the progress */}
-                      <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 pointer-events-none">
-                        <div className="w-10 h-10 md:w-16 md:h-16 bg-white rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.6)] overflow-hidden">
-                          <img 
-                            src="https://www.svgrepo.com/show/77569/soccer-ball.svg" 
-                            alt="Soccer Ball" 
-                            className="w-[90%] h-[90%] animate-spin-slow"
-                          />
-                        </div>
-                      </div>
-                    </motion.div>
-                  </div>
-                </div>
+            <div className="relative z-10 w-full flex flex-col justify-end items-center flex-1 pb-8 md:pb-12">
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-black/45 text-white/90 backdrop-blur-md">
+                <div className="h-2 w-2 rounded-full bg-fifa-accent animate-pulse" />
+                <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.4em]">Carregando</span>
               </div>
             </div>
-
-            {/* Bottom Gradient Overlay */}
-            <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-[#009739] to-transparent pointer-events-none" />
           </motion.div>
         ) : null}
       </AnimatePresence>
@@ -1057,9 +1015,9 @@ export default function App() {
                 </button>
               </div>
 
-              <div className="space-y-6">
-                <div>
-                  <h4 className="text-[10px] font-black uppercase text-fifa-primary/40 tracking-[0.2em] mb-4">Sincronização Cloud</h4>
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="text-[10px] font-black uppercase text-fifa-primary/40 tracking-[0.2em] mb-4">Sincronização Cloud</h4>
                   <div className="grid grid-cols-2 gap-4">
                     <button 
                       onClick={exportData}
@@ -1086,6 +1044,25 @@ export default function App() {
                         className="hidden" 
                       />
                     </button>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-[10px] font-black uppercase text-fifa-primary/40 tracking-[0.2em] mb-4">Wallpapers</h4>
+                  <div className="grid grid-cols-3 gap-3">
+                    {loadingImages.map((url, index) => (
+                      <button
+                        key={url}
+                        type="button"
+                        onClick={() => downloadWallpaper(url, `wallpaper-${index + 1}.webp`)}
+                        className="flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-fifa-slate-100 bg-fifa-slate-50 py-4 hover:border-fifa-primary transition-all"
+                      >
+                        <div className="h-12 w-12 overflow-hidden rounded-xl bg-white shadow-sm">
+                          <img src={url} alt={`Wallpaper ${index + 1}`} className="h-full w-full object-cover" />
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-widest">Baixar {index + 1}</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
 
