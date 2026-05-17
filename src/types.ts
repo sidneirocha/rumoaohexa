@@ -4,6 +4,7 @@ export interface Sticker {
   teamCode: string; // e.g. "BRA"
   teamName: string;
   group?: string;
+  specialSection?: string;
   isSpecial?: boolean;
   variant?: 'bordo' | 'silver' | 'gold' | 'purple';
   imageUrl?: string;

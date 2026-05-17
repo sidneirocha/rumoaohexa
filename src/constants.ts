@@ -171,7 +171,8 @@ export const GROUPS = [
 ];
 
 export const SPECIALS = [
-  { name: "Página Inicial & História", code: "FWC", range: [0, 19] },
+  { name: "Página Inicial", code: "FWC", range: [0, 9] },
+  { name: "História", code: "FWC", range: [10, 19] },
   { name: "Coca-Cola", code: "CC", range: [1, 14] },
 ];
 

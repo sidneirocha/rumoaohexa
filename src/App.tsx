@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo, ReactNode } from 'react';
+import React, { useState, useEffect, useMemo, useRef, ReactNode } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import confetti from 'canvas-confetti';
@@ -110,11 +110,12 @@ export default function App() {
     return localStorage.getItem('install-banner-dismissed') === 'true';
   });
   const [showTutorial, setShowTutorial] = useState(false);
+  const [showCompletionCelebration, setShowCompletionCelebration] = useState(false);
   const [tutorialDismissed, setTutorialDismissed] = useState(() => {
     if (typeof window === 'undefined') return false;
     return localStorage.getItem('onboarding-dismissed') === 'true';
   });
-  const firstCountryRefs = React.useRef<Record<string, HTMLDivElement | null>>({});
+  const celebrationTriggeredRef = useRef(false);
 
   const LOADING_IMAGES = [
     "https://raw.githubusercontent.com/sidneirocha/stickerscopa26/99fab2db99f5941e3a573be4c30def3eedbb17d8/wp1.webp",
@@ -239,7 +240,7 @@ export default function App() {
         const groupName = id.replace('grupo-', '').toUpperCase();
         setActiveGroup(groupName);
       } else if (id === 'especiais') {
-        setActiveGroup(SPECIALS[0].code);
+        setActiveGroup(SPECIALS[0].name);
       } else if (id === 'legends') {
         setActiveGroup(LEGENDS_PLAYERS[0].code);
       }
@@ -251,10 +252,12 @@ export default function App() {
     setActiveGroup(nextGroup);
 
     if (nextGroup && isMobile) {
-      window.setTimeout(() => {
-        const target = firstCountryRefs.current[groupName];
-        target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 120);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const target = document.querySelector(`[data-first-country="${groupName}"]`) as HTMLElement | null;
+          target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      });
     }
   };
 
@@ -361,6 +364,8 @@ export default function App() {
           number: numberLabel,
           teamCode: special.code,
           teamName: special.name,
+          group: special.name,
+          specialSection: special.name,
           isSpecial: true,
         });
       }
@@ -422,6 +427,45 @@ export default function App() {
     return { total, collected, percentage, duplicates };
   }, [allStickers, collection]);
 
+  useEffect(() => {
+    if (stats.total > 0 && stats.collected === stats.total) {
+      if (celebrationTriggeredRef.current) return;
+
+      celebrationTriggeredRef.current = true;
+      setShowCompletionCelebration(true);
+
+      const colors = ['#002772', '#009b3a', '#fedf00', '#ffffff'];
+      const end = Date.now() + 2600;
+
+      const burst = () => {
+        confetti({
+          particleCount: 3,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors,
+        });
+        confetti({
+          particleCount: 3,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors,
+        });
+
+        if (Date.now() < end) {
+          requestAnimationFrame(burst);
+        }
+      };
+
+      burst();
+      return;
+    }
+
+    celebrationTriggeredRef.current = false;
+    setShowCompletionCelebration(false);
+  }, [stats.collected, stats.total]);
+
   const updateStickerCount = (id: string, delta: number) => {
     setCollection((prev) => {
       const current = prev[id] || 0;
@@ -441,28 +485,31 @@ export default function App() {
 
     const grouped = Object.entries(
       relevant.reduce((acc, sticker) => {
-        if (!acc[sticker.teamCode]) acc[sticker.teamCode] = [];
-        acc[sticker.teamCode].push(sticker);
+        const groupKey = sticker.group || sticker.teamCode;
+        if (!acc[groupKey]) acc[groupKey] = [];
+        acc[groupKey].push(sticker);
         return acc;
       }, {} as Record<string, Sticker[]>)
-    ).map(([teamCode, stickers]) => {
+    ).map(([groupKey, stickers]) => {
       const first = stickers[0];
-      const labels = stickers.map((sticker) => {
-        const count = collection[sticker.id] || 0;
-        let label = sticker.number;
-        if (sticker.teamCode === 'EXTRA') {
-          label = `${sticker.teamName} (${sticker.number})`;
-        }
-        if (type === 'duplicates') {
-          label += `(x${count - 1})`;
-        }
-        return label;
-      });
+      const labels = first?.teamCode === 'EXTRA' && type === 'missing'
+        ? LEGENDS_VARIANTS.map((variant) => variant)
+        : stickers.map((sticker) => {
+            const count = collection[sticker.id] || 0;
+            let label = sticker.number;
+            if (sticker.teamCode === 'EXTRA') {
+              label = `${sticker.teamName} (${sticker.number})`;
+            }
+            if (type === 'duplicates') {
+              label += `(x${count - 1})`;
+            }
+            return label;
+          });
 
       return {
-        teamCode,
-        teamName: first?.teamName || teamCode,
-        flag: FIFA_TO_ISO[teamCode],
+        teamCode: first?.teamCode || groupKey,
+        teamName: first?.teamCode === 'EXTRA' ? 'Legends Extra' : (first?.group || first?.teamName || groupKey),
+        flag: FIFA_TO_ISO[first?.teamCode || groupKey],
         labels,
       };
     });
@@ -628,7 +675,7 @@ export default function App() {
 
   const confirmImportText = () => {
     if (!importedPreview) {
-      showToast("Cole um backup, MD ou TXT válido antes de importar.");
+      showToast("Cole um backup ou TXT válido antes de importar.");
       return;
     }
 
@@ -745,7 +792,7 @@ export default function App() {
               <img 
                 src="https://upload.wikimedia.org/wikipedia/en/1/17/2026_FIFA_World_Cup_emblem.svg" 
                 alt="Logo" 
-                className="h-8 md:h-16 w-auto drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] shrink-0"
+                className="h-11 md:h-16 w-auto drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] shrink-0"
               />
               <div className="flex flex-row items-baseline gap-1.5 md:gap-2">
                 <h1 className="text-sm md:text-3xl font-black uppercase italic leading-none tracking-tighter whitespace-nowrap">
@@ -906,21 +953,23 @@ export default function App() {
               
               <div className="grid grid-cols-1 gap-4">
                 {SPECIALS.map((special) => {
-                  const stickers = getFilteredStickers(allStickers.filter(s => s.teamCode === special.code));
+                  const stickers = getFilteredStickers(allStickers.filter(s => s.group === special.name));
                   if (stickers.length === 0 && filter !== 'all') return null;
 
-                  const collectedCount = allStickers.filter(s => s.teamCode === special.code && (collection[s.id] || 0) > 0).length;
-                  const totalCount = allStickers.filter(s => s.teamCode === special.code).length;
-                  const duplicateCount = allStickers.filter(s => s.teamCode === special.code).reduce((acc, s) => acc + Math.max(0, (collection[s.id] || 0) - 1), 0);
+                  const collectedCount = allStickers.filter(s => s.group === special.name && (collection[s.id] || 0) > 0).length;
+                  const totalCount = allStickers.filter(s => s.group === special.name).length;
+                  const duplicateCount = allStickers.filter(s => s.group === special.name).reduce((acc, s) => acc + Math.max(0, (collection[s.id] || 0) - 1), 0);
 
                   return (
                     <Accordion 
-                      key={special.code}
+                      key={special.name}
                       title={special.name}
                       subtitle={`${collectedCount} DE ${totalCount}`}
                       duplicates={duplicateCount}
-                      isOpen={activeGroup === special.code}
-                      onToggle={() => openGroup(special.code)}
+                      completed={totalCount > 0 && collectedCount === totalCount}
+                      alignLeft={special.name === 'Página Inicial' || special.name === 'História'}
+                      isOpen={activeGroup === special.name}
+                      onToggle={() => openGroup(special.name)}
                     >
                       <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-5 gap-2 p-3 md:p-4 bg-white rounded-b-3xl md:border-x md:border-b border-fifa-slate-200">
                         {stickers.map(s => (
@@ -955,7 +1004,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {LEGENDS_PLAYERS.map(player => {
                     const stickers = getFilteredStickers(allStickers.filter(s => s.teamName === player.name && s.teamCode === 'EXTRA'));
                     if (stickers.length === 0 && filter !== 'all') return null;
@@ -968,6 +1017,7 @@ export default function App() {
                         key={player.code}
                         title={player.name}
                         subtitle={`${collectedCount} DE ${totalCount}`}
+                        completed={totalCount > 0 && collectedCount === totalCount}
                         isOpen={activeGroup === player.code}
                         onToggle={() => openGroup(player.code)}
                       >
@@ -990,7 +1040,7 @@ export default function App() {
 
               {/* Groups grid */}
               <div id="times-list" className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start content-start">
-                 {GROUPS.map((group) => {
+                {GROUPS.map((group) => {
                 const groupStickers = allStickers.filter(s => s.group === group.name);
                 const filteredGroupStickers = getFilteredStickers(groupStickers);
                 
@@ -1001,8 +1051,6 @@ export default function App() {
                 const duplicateCount = groupStickers.reduce((acc, s) => acc + Math.max(0, (collection[s.id] || 0) - 1), 0);
 
                 const groupFlags = group.teams.map(t => FIFA_TO_ISO[t.code]);
-                let firstVisibleTeamAttached = false;
-
                 return (
                   <div key={group.name} id={`grupo-${group.name.toLowerCase()}`} className="space-y-4">
                     <Accordion 
@@ -1010,25 +1058,26 @@ export default function App() {
                       subtitle={`${collectedCount}/${totalCount}`}
                       duplicates={duplicateCount}
                       flags={groupFlags}
+                      completed={totalCount > 0 && collectedCount === totalCount}
                       isOpen={activeGroup === group.name}
                       onToggle={() => openGroup(group.name)}
                     >
                       <div className="space-y-8 p-4 md:p-6 bg-white rounded-b-3xl md:border-x md:border-b border-fifa-slate-200">
                         <div className="grid grid-cols-1 md:grid-cols-1 gap-8">
-                          {group.teams.map(team => {
+                          {group.teams.map((team, teamIndex) => {
                             const teamStickers = filteredGroupStickers.filter(s => s.teamCode === team.code);
                             if (teamStickers.length === 0 && filter !== 'all') return null;
+                            const firstVisibleTeamIndex = group.teams.findIndex((candidate) => {
+                              const candidateStickers = filteredGroupStickers.filter(s => s.teamCode === candidate.code);
+                              return candidateStickers.length > 0;
+                            });
+                            const isFirstVisibleTeam = teamIndex === firstVisibleTeamIndex;
 
                             return (
                               <div
                                 key={team.code}
                                 className="space-y-4"
-                                ref={(el) => {
-                                  if (!firstVisibleTeamAttached) {
-                                    firstCountryRefs.current[group.name] = el;
-                                    firstVisibleTeamAttached = true;
-                                  }
-                                }}
+                                data-first-country={isFirstVisibleTeam ? group.name : undefined}
                               >
                                 <div className="flex items-center justify-between border-b border-fifa-slate-100 pb-2">
                                   <div className="flex items-center gap-3">
@@ -1403,19 +1452,6 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="pt-6 border-t border-fifa-slate-100">
-                  <p className="text-[10px] text-fifa-primary/40 font-bold text-center uppercase tracking-widest">
-                    Criado por:
-                    <a
-                      href="https://github.com/sidneirocha"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="ml-1 text-fifa-primary/60 hover:text-fifa-primary underline underline-offset-4 normal-case tracking-normal"
-                    >
-                      github.com/sidneirocha
-                    </a>
-                  </p>
-                </div>
               </div>
             </motion.div>
           </div>
@@ -1444,7 +1480,7 @@ export default function App() {
                     <p className="text-[10px] font-black uppercase tracking-[0.3em] text-fifa-primary/35">Importar coleção</p>
                     <h3 className="mt-2 text-xl md:text-2xl font-black text-fifa-primary uppercase tracking-tight">Cole o texto do backup</h3>
                     <p className="mt-2 text-sm text-fifa-primary/55">
-                      Você pode colar o backup, MD ou TXT exportado. O app mostra a quantidade encontrada antes de confirmar.
+                      Você pode colar o backup ou TXT exportado. O app mostra a quantidade encontrada antes de confirmar.
                     </p>
                   </div>
                   <button
@@ -1484,7 +1520,7 @@ export default function App() {
 
                   {importText.trim() && !importedPreview && (
                     <p className="text-sm font-bold text-red-600">
-                      Não reconheci esse texto. Cole um backup, MD ou TXT exportado pelo app.
+                      Não reconheci esse texto. Cole um backup ou TXT exportado pelo app.
                     </p>
                   )}
                 </div>
@@ -1511,6 +1547,63 @@ export default function App() {
           </div>
         )}
       </AnimatePresence>
+      <AnimatePresence>
+        {showCompletionCelebration && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[230] flex items-center justify-center p-4 md:p-8"
+          >
+            <div className="absolute inset-0 bg-black/75 backdrop-blur-md" />
+            <motion.div
+              initial={{ scale: 0.92, y: 24, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.92, y: 24, opacity: 0 }}
+              className="relative w-full max-w-lg overflow-hidden rounded-[2rem] bg-white shadow-2xl"
+            >
+              <div className="h-2 w-full bg-gradient-to-r from-[#009b3a] via-[#fedf00] to-[#002772]" />
+              <div className="relative p-8 md:p-10 text-center">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(0,151,57,0.10),transparent_40%)]" />
+                <div className="relative flex flex-col items-center gap-6">
+                  <img
+                    src="https://upload.wikimedia.org/wikipedia/en/1/17/2026_FIFA_World_Cup_emblem.svg"
+                    alt="Logo da Copa 2026"
+                    className="h-24 md:h-28 w-auto drop-shadow-[0_0_25px_rgba(0,39,114,0.18)]"
+                  />
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-black uppercase tracking-[0.45em] text-fifa-primary/35">Parabéns</p>
+                    <h3 className="text-3xl md:text-4xl font-black uppercase italic tracking-tight text-fifa-primary">
+                      Álbum completo
+                    </h3>
+                    <p className="text-sm md:text-base font-semibold text-fifa-primary/60 max-w-md mx-auto">
+                      Você completou toda a coleção Stickers Copa 26.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowCompletionCelebration(false)}
+                    className="mt-2 rounded-2xl bg-fifa-primary px-5 py-3 text-sm font-black uppercase tracking-widest text-white shadow-lg shadow-fifa-primary/20 transition-transform active:scale-95"
+                  >
+                    Continuar
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <footer className="px-4 py-6 text-center text-[10px] font-bold uppercase tracking-[0.25em] text-fifa-primary/35">
+        Criado por:
+        <a
+          href="https://github.com/sidneirocha"
+          target="_blank"
+          rel="noreferrer"
+          className="text-fifa-primary/60 hover:text-fifa-primary underline underline-offset-4 normal-case tracking-normal"
+        >
+          github.com/sidneirocha
+        </a>
+      </footer>
     </div>
   );
 }
@@ -1716,10 +1809,12 @@ const Accordion: React.FC<{
   subtitle?: string;
   flags?: string[];
   duplicates?: number;
+  completed?: boolean;
+  alignLeft?: boolean;
   children: ReactNode;
   isOpen: boolean;
   onToggle: () => void;
-}> = ({ title, subtitle, flags, duplicates, children, isOpen, onToggle }) => {
+}> = ({ title, subtitle, flags, duplicates, completed, alignLeft, children, isOpen, onToggle }) => {
   return (
     <div className="overflow-hidden">
       <button
@@ -1730,16 +1825,24 @@ const Accordion: React.FC<{
         `}
       >
         <div className="flex flex-col items-start gap-2 md:gap-3 flex-1">
-          <div className="flex items-center gap-2 w-full justify-between pr-2 md:pr-4">
-            <div className="flex items-baseline gap-2">
+          <div className={`flex items-center gap-2 w-full pr-2 md:pr-4 ${alignLeft ? 'justify-start' : 'justify-between'}`}>
+            <div className={`flex items-baseline gap-2 ${alignLeft ? 'text-left' : ''}`}>
               <span className="text-xs md:text-sm font-black text-fifa-primary uppercase tracking-tight italic">{title}</span>
               {subtitle && <span className="text-[9px] md:text-[10px] font-black text-fifa-primary/30 leading-none uppercase tracking-widest whitespace-nowrap">{subtitle}</span>}
             </div>
-            {duplicates !== undefined && duplicates > 0 && (
-              <span className="text-[8px] md:text-[9px] font-black bg-fifa-peach text-white px-1.5 md:px-2 py-0.5 rounded-full uppercase italic shrink-0">
-                +{duplicates}
-              </span>
-            )}
+            <div className="flex items-center gap-2 shrink-0">
+              {completed && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-green-50 text-green-700 px-2 py-0.5 text-[8px] md:text-[9px] font-black uppercase italic border border-green-200">
+                  <CheckCircle2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
+                  Completo
+                </span>
+              )}
+              {duplicates !== undefined && duplicates > 0 && (
+                <span className="text-[8px] md:text-[9px] font-black bg-fifa-peach text-white px-1.5 md:px-2 py-0.5 rounded-full uppercase italic shrink-0">
+                  +{duplicates}
+                </span>
+              )}
+            </div>
           </div>
           {flags && flags.length > 0 && (
             <div className="flex gap-1.5 md:gap-2">
