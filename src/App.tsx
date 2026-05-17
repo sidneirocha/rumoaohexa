@@ -290,6 +290,11 @@ export default function App() {
     localStorage.setItem('onboarding-dismissed', 'true');
   };
 
+  const reopenTutorial = () => {
+    setShowSettings(false);
+    setShowTutorial(true);
+  };
+
   const openInstallPrompt = async () => {
     if (deferredPrompt) {
       deferredPrompt.prompt();
@@ -1086,10 +1091,7 @@ export default function App() {
                   ))}
                 </div>
 
-                <div className="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                  <p className="text-xs md:text-sm font-bold text-fifa-primary/45 uppercase tracking-[0.2em]">
-                    O tutorial aparece só na primeira vez.
-                  </p>
+                <div className="mt-6 flex flex-col md:flex-row md:items-center md:justify-end gap-3">
                   <button
                     type="button"
                     onClick={dismissTutorial}
@@ -1302,6 +1304,14 @@ export default function App() {
                       <span className="text-[10px] font-black uppercase tracking-widest">Importar</span>
                     </button>
                   </div>
+                  <button
+                    type="button"
+                    onClick={reopenTutorial}
+                    className="mt-4 w-full flex items-center justify-center gap-3 rounded-2xl border-2 border-fifa-primary/10 bg-fifa-primary/5 px-4 py-4 text-sm font-black uppercase tracking-widest text-fifa-primary hover:bg-fifa-primary/10 transition-colors"
+                  >
+                    <CheckCircle2 className="h-5 w-5" />
+                    Rever tutorial
+                  </button>
                 </div>
 
                 <div>
