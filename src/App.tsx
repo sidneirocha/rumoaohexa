@@ -330,6 +330,15 @@ export default function App() {
     localStorage.setItem('onboarding-dismissed', 'true');
   };
 
+  const handleTutorialNext = () => {
+    if (tutorialSlide >= tutorialSlides.length - 1) {
+      dismissTutorial();
+      return;
+    }
+
+    setTutorialSlide((prev) => prev + 1);
+  };
+
   const dismissWallpaperUnlock = () => {
     setShowWallpaperUnlock(null);
   };
@@ -1423,7 +1432,7 @@ export default function App() {
               </button>
             ) : (
               <span className="shrink-0 rounded-xl bg-white/10 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white/45">
-                Busca
+                Buscar
               </span>
             )}
           </div>
@@ -1508,10 +1517,10 @@ export default function App() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => setTutorialSlide((prev) => (prev + 1) % tutorialSlides.length)}
+                      onClick={handleTutorialNext}
                       className="rounded-2xl border border-fifa-slate-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-widest text-fifa-primary hover:bg-fifa-slate-50 transition-colors"
                     >
-                      Próximo
+                      {tutorialSlide >= tutorialSlides.length - 1 ? 'Começar agora' : 'Próximo'}
                     </button>
                   </div>
 
