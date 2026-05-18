@@ -832,6 +832,17 @@ export default function App() {
   const importedTotalCount = importedPreview
     ? Object.values(importedPreview).reduce((sum, count) => sum + count, 0)
     : 0;
+  const importedOfficialCount = importedPreview
+    ? Object.entries(importedPreview).reduce((sum, [id, count]) => {
+        const sticker = allStickers.find((item) => item.id === id);
+        if (!sticker || sticker.teamCode === 'EXTRA' || sticker.teamCode === 'CC') {
+          return sum;
+        }
+
+        return sum + count;
+      }, 0)
+    : 0;
+  const importedNonOfficialCount = importedTotalCount - importedOfficialCount;
 
   const openImportModal = () => {
     setImportText('');
@@ -2074,20 +2085,27 @@ export default function App() {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div className="rounded-2xl border border-fifa-slate-100 bg-fifa-slate-50 px-4 py-3">
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-fifa-primary/35">Códigos</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-fifa-primary/35">Códigos únicos</p>
                       <p className="mt-1 text-2xl font-black text-fifa-primary">{importedDistinctCount}</p>
                     </div>
                     <div className="rounded-2xl border border-fifa-slate-100 bg-fifa-slate-50 px-4 py-3">
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-fifa-primary/35">Total</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-fifa-primary/35">Figurinhas no backup</p>
                       <p className="mt-1 text-2xl font-black text-fifa-primary">{importedTotalCount}</p>
                     </div>
                     <div className="rounded-2xl border border-fifa-slate-100 bg-fifa-slate-50 px-4 py-3">
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-fifa-primary/35">Status</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-fifa-primary/35">Contam para o álbum</p>
                       <p className="mt-1 text-sm font-black text-fifa-primary uppercase">
-                        {importedPreview ? 'Pronto para importar' : 'Aguardando texto válido'}
+                        {importedPreview ? importedOfficialCount : 'Aguardando texto válido'}
                       </p>
                     </div>
                   </div>
+
+                  {importedPreview && (
+                    <div className="rounded-2xl border border-fifa-slate-100 bg-white px-4 py-3 text-sm text-fifa-primary/60">
+                      <span className="font-black uppercase tracking-[0.2em] text-fifa-primary/35">Fora da meta: </span>
+                      <span className="font-bold">{importedNonOfficialCount} figurinhas extras ou Coca-Cola.</span>
+                    </div>
+                  )}
 
                   {importText.trim() && !importedPreview && (
                     <p className="text-sm font-bold text-red-600">
