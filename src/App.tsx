@@ -1236,16 +1236,14 @@ export default function App() {
           <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-8 items-start">
             {/* Specials - Sidebar sticky */}
             <div id="especiais" className="space-y-6 lg:sticky lg:top-[240px] transition-all">
-              <div className="bg-gradient-to-br from-fifa-primary to-blue-800 rounded-3xl p-6 text-white shadow-xl overflow-hidden relative">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-fifa-cyan rounded-full translate-x-1/2 -translate-y-1/2 opacity-20 blur-2xl" />
-                <div className="absolute bottom-0 left-0 w-40 h-full bg-white rounded-tr-full -translate-x-1/4 opacity-10" />
-                <div className="relative z-10 flex justify-between items-center">
-                  <div>
-                    <h2 className="text-xl font-black uppercase leading-tight italic">Especiais</h2>
+              <div className="bg-gradient-to-br from-fifa-primary to-blue-800 rounded-3xl h-[92px] md:h-[104px] px-6 md:px-8 text-white shadow-xl overflow-hidden relative border border-white/10 flex items-center">
+                <div className="relative z-10 flex w-full items-center justify-between gap-4">
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-xl md:text-2xl font-black uppercase leading-tight italic">Especiais</h2>
                   </div>
-                    <div className="bg-white/20 px-3 py-1.5 rounded-2xl text-[10px] font-black backdrop-blur-md border border-white/10 italic">
-                      {allStickers.filter(s => s.isSpecial && (collection[s.id] || 0) > 0).length} / {allStickers.filter(s => s.isSpecial).length}
-                    </div>
+                  <div className="bg-white/20 px-3 py-1.5 rounded-2xl text-[10px] md:text-xs font-black backdrop-blur-md border border-white/10 italic shrink-0 whitespace-nowrap">
+                    {allStickers.filter(s => s.isSpecial && (collection[s.id] || 0) > 0).length} / {allStickers.filter(s => s.isSpecial).length}
+                  </div>
                 </div>
               </div>
               
