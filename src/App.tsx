@@ -1912,11 +1912,11 @@ export default function App() {
                           )}
                         </button>
                         {!unlocked && (
-                          <div className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 w-40 -translate-x-1/2 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
+                          <div className="pointer-events-none absolute left-1/2 bottom-full z-20 mb-2 w-40 -translate-x-1/2 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
                             <div className="rounded-2xl border border-[#8b0000]/20 bg-[#8b0000] px-3 py-2 text-center text-[10px] font-black uppercase tracking-[0.18em] text-white shadow-2xl">
                               {tooltipText}
                             </div>
-                            <div className="mx-auto -mt-1 h-3 w-3 rotate-45 bg-[#8b0000] border-l border-t border-[#8b0000]/20" />
+                            <div className="mx-auto -mb-1 h-3 w-3 rotate-45 bg-[#8b0000] border-r border-b border-[#8b0000]/20" />
                           </div>
                         )}
                       </div>
