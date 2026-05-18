@@ -1290,11 +1290,11 @@ export default function App() {
               <div id="legends" className="space-y-6">
               <div className="bg-gradient-to-r from-[#fedf00] via-[#f5b800] to-[#fff176] rounded-3xl h-[92px] md:h-[104px] px-6 md:px-8 text-fifa-primary shadow-xl overflow-hidden relative border border-[#f5b800]/20 flex items-center">
                 <div className="absolute top-0 right-0 w-64 h-full bg-white rounded-full translate-x-1/2 opacity-20 blur-3xl" />
-                <div className="relative z-10 flex w-full items-center justify-between gap-4">
+                <div className="relative z-10 flex w-full items-center gap-4">
                   <div className="min-w-0 flex-1">
                     <h2 className="text-xl md:text-2xl font-black uppercase leading-tight italic text-fifa-primary">Legends Extra</h2>
                   </div>
-                  <div className="bg-white/70 px-3 py-1.5 rounded-2xl text-[10px] md:text-xs font-black backdrop-blur-md border border-fifa-primary/10 italic shrink-0 whitespace-nowrap text-fifa-primary">
+                  <div className="ml-auto bg-white/70 px-3 py-1.5 rounded-2xl text-[10px] md:text-xs font-black backdrop-blur-md border border-fifa-primary/10 italic shrink-0 whitespace-nowrap text-fifa-primary">
                     {allStickers.filter(s => s.teamCode === 'EXTRA' && (collection[s.id] || 0) > 0).length} / 80
                   </div>
                 </div>
@@ -1347,11 +1347,11 @@ export default function App() {
                   return (
                 <div className="xl:col-span-2 bg-gradient-to-r from-[#009b3a] via-[#1fb14b] to-[#7bdc68] rounded-3xl h-[92px] md:h-[104px] px-6 md:px-8 text-white shadow-xl overflow-hidden relative border border-white/10 flex items-center">
                   <div className="absolute top-0 right-0 w-64 h-full bg-white rounded-full translate-x-1/2 opacity-10 blur-3xl" />
-                  <div className="relative z-10 flex w-full items-center justify-between gap-4">
+                  <div className="relative z-10 flex w-full items-center gap-4">
                     <div className="min-w-0 flex-1">
                       <h2 className="text-xl md:text-2xl font-black uppercase leading-tight italic">Seleções</h2>
                     </div>
-                    <div className="bg-white/20 px-3 py-1.5 rounded-2xl text-[10px] md:text-xs font-black backdrop-blur-md border border-white/10 italic shrink-0 whitespace-nowrap">
+                    <div className="ml-auto bg-white/20 px-3 py-1.5 rounded-2xl text-[10px] md:text-xs font-black backdrop-blur-md border border-white/10 italic shrink-0 whitespace-nowrap">
                       {collectedSelectionsCount} / {totalSelectionsCount}
                     </div>
                   </div>
