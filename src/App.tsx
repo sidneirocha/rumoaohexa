@@ -586,31 +586,35 @@ export default function App() {
       relevant.reduce((acc, sticker) => {
         const groupKey = sticker.teamCode === 'EXTRA'
           ? sticker.teamName
-          : (sticker.group || sticker.teamCode);
+          : sticker.isSpecial
+            ? (sticker.specialSection || sticker.teamName || sticker.teamCode)
+            : sticker.teamCode;
         if (!acc[groupKey]) acc[groupKey] = [];
         acc[groupKey].push(sticker);
         return acc;
       }, {} as Record<string, Sticker[]>)
     ).map(([groupKey, stickers]) => {
       const first = stickers[0];
-      const labels = first?.teamCode === 'EXTRA' && type === 'missing'
-        ? stickers.map((sticker) => sticker.variant || sticker.number).filter(Boolean)
-        : stickers.map((sticker) => {
-            const count = collection[sticker.id] || 0;
-            let label = sticker.number;
-            if (sticker.teamCode === 'EXTRA') {
-              label = `${sticker.teamName} (${sticker.number})`;
-            }
-            if (type === 'duplicates') {
-              label += `(x${count - 1})`;
-            }
-            return label;
-          });
+      const labels = stickers.map((sticker) => {
+        const count = collection[sticker.id] || 0;
+        let label = sticker.number;
+        if (sticker.teamCode === 'EXTRA' && type === 'missing') {
+          label = `${sticker.teamName} (${sticker.number})`;
+        }
+        if (type === 'duplicates') {
+          label += `(x${count - 1})`;
+        }
+        return label;
+      });
 
       return {
         key: `${first?.teamCode || groupKey}-${groupKey}`,
         teamCode: first?.teamCode || groupKey,
-        teamName: first?.teamCode === 'EXTRA' ? (first?.teamName || groupKey) : (first?.group || first?.teamName || groupKey),
+        teamName: first?.teamCode === 'EXTRA'
+          ? (first?.teamName || groupKey)
+          : first?.isSpecial
+            ? (first?.specialSection || first?.teamName || groupKey)
+            : (first?.teamName || groupKey),
         flag: FIFA_TO_ISO[first?.teamCode || groupKey],
         labels,
       };
