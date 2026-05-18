@@ -838,7 +838,7 @@ export default function App() {
     },
     {
       title: 'Recompensas',
-      description: 'À medida que você avança, os wallpapers vão sendo desbloqueados e o álbum termina em clima de festa.',
+      description: 'À medida que você avança, os wallpapers vão sendo desbloqueados e o álbum fica mais completo.',
       accent: 'from-[#fedf00] to-[#f5b800]',
     },
   ];
@@ -979,7 +979,7 @@ export default function App() {
                   </div>
                   <div>
                     <p className="text-[9px] font-black uppercase tracking-[0.3em] text-fifa-primary/45">Recompensa</p>
-                    <h4 className="text-sm font-black uppercase italic">Wallpapers liberados</h4>
+                    <h4 className="text-sm font-black uppercase italic">Wallpapers</h4>
                   </div>
                 </div>
                 <div className="rounded-xl bg-white/60 px-3 py-2 text-[10px] font-black">3 etapas</div>
@@ -1475,9 +1475,6 @@ export default function App() {
                   <div className="space-y-2">
                     <p className="text-[10px] font-black uppercase tracking-[0.3em] text-fifa-primary/35">Bem-vindo</p>
                     <h3 className="text-2xl md:text-3xl font-black text-fifa-primary uppercase tracking-tight">Como usar o app</h3>
-                    <p className="text-sm md:text-base font-medium text-fifa-primary/65 max-w-xl">
-                      Veja o fluxo principal em um carrossel rápido com telas simuladas do aplicativo.
-                    </p>
                   </div>
                   <button
                     type="button"
