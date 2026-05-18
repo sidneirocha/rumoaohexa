@@ -123,6 +123,9 @@ const formatBrazilianDate = (date: Date) => {
 
 const SOURCE_LINK = 'https://sidneirocha.github.io/stickerscopa26/docs';
 
+const normalizeSearchText = (value: string) =>
+  value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
 export default function App() {
   const [collection, setCollection] = useState<Collection>(() => {
     const saved = localStorage.getItem('sticker-collection');
@@ -879,19 +882,28 @@ export default function App() {
     let result = stickers;
     
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim();
+      const query = normalizeSearchText(searchQuery);
+      const hasExactCodeMatch = stickers.some((s) => normalizeSearchText(s.teamCode) === query);
+
       result = result.filter((s) => {
-        const fullCode = `${s.teamCode}${s.number}`.toLowerCase();
-        const codeWithSpace = `${s.teamCode} ${s.number}`.toLowerCase();
-        const name = s.teamName.toLowerCase();
-        const variant = (s.variant || '').toLowerCase();
+        const normalizedTeamCode = normalizeSearchText(s.teamCode);
+        if (hasExactCodeMatch) {
+          return normalizedTeamCode === query;
+        }
+
+        const fullCode = normalizeSearchText(`${s.teamCode}${s.number}`);
+        const codeWithSpace = normalizeSearchText(`${s.teamCode} ${s.number}`);
+        const name = normalizeSearchText(s.teamName);
+        const variant = normalizeSearchText(s.variant || '');
+        const number = normalizeSearchText(s.number);
+
         return (
-          fullCode.includes(query) || 
+          fullCode.includes(query) ||
           codeWithSpace.includes(query) ||
-          s.teamCode.toLowerCase().includes(query) ||
+          normalizedTeamCode.includes(query) ||
           name.includes(query) ||
           variant.includes(query) ||
-          s.number === query
+          number === query
         );
       });
     }
