@@ -7,7 +7,7 @@ import React, { useState, useEffect, useMemo, useRef, ReactNode } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import confetti from 'canvas-confetti';
-import { Search, Trophy, CheckCircle2, Circle, Menu, X, ChevronRight, ChevronDown, Filter, Share2, Copy, Check, Settings as SettingsIcon, MessageCircleMore } from 'lucide-react';
+import { Search, Trophy, CheckCircle2, Circle, Menu, X, ChevronRight, ChevronDown, Filter, Share2, Copy, Check, Lock, Settings as SettingsIcon, MessageCircleMore } from 'lucide-react';
 import { motion, AnimatePresence, useScroll, useSpring } from 'motion/react';
 import { Collection, Sticker } from './types';
 import { GROUPS, SPECIALS, FIFA_TO_ISO, LEGENDS_PLAYERS, LEGENDS_VARIANTS, VARIANT_COLORS } from './constants';
@@ -1919,11 +1919,17 @@ export default function App() {
                           }`}
                         >
                           <div className="h-12 w-12 overflow-hidden rounded-xl bg-white shadow-sm">
-                            <img
-                              src={url}
-                              alt={`Wallpaper ${index + 1}`}
-                              className={`h-full w-full object-cover ${unlocked ? '' : 'blur-[1px]'}`}
-                            />
+                            {unlocked ? (
+                              <img
+                                src={url}
+                                alt={`Wallpaper ${index + 1}`}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-fifa-slate-100 to-fifa-slate-200 text-[#8b0000]">
+                                <Lock className="h-5 w-5" />
+                              </div>
+                            )}
                           </div>
                           <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
                           {!unlocked && (
