@@ -114,6 +114,15 @@ const formatCollectionLine = (label: string, stickers: Sticker[], collection: Co
   return `- ${label}: ${entries.map(({ id, count }) => `${id}: ${count}`).join(', ')}`;
 };
 
+const formatBrazilianDate = (date: Date) => {
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
+const SOURCE_LINK = 'https://sidneirocha.github.io/stickerscopa26/docs';
+
 export default function App() {
   const [collection, setCollection] = useState<Collection>(() => {
     const saved = localStorage.getItem('sticker-collection');
@@ -677,6 +686,7 @@ export default function App() {
     const lines = [
       `Olá, essa é a minha ${header} - Stickers Copa 26`,
       `Total: ${totalDisplay} ${type === 'missing' ? 'figurinhas' : 'repetidas'}`,
+      `Exportado em: ${formatBrazilianDate(new Date())}`,
       '',
       ...grouped.flatMap((entry) => [
         `${entry.teamName}${entry.flag ? ` (${entry.teamCode})` : ''}: ${entry.labels.join(', ')}`,
@@ -684,7 +694,7 @@ export default function App() {
     ];
 
     if (includeSourceLink) {
-      lines.push('', 'Dados de: https://sidneirocha.github.io/stickerscopa26');
+      lines.push('', `Dados de: ${SOURCE_LINK}`);
     }
 
     return lines.join('\n');
@@ -741,7 +751,7 @@ export default function App() {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(`Total: ${totalDisplay} ${type === 'missing' ? 'figurinhas' : 'repetidas'} | Gerado em: ${new Date().toLocaleDateString()}`, 14, 28);
+    doc.text(`Total: ${totalDisplay} ${type === 'missing' ? 'figurinhas' : 'repetidas'} | Gerado em: ${formatBrazilianDate(new Date())}`, 14, 28);
     const tableData = grouped.map(({ teamCode, teamName, labels }) => [
       `${teamName} (${teamCode})`,
       labels.join(', '),
@@ -775,7 +785,7 @@ export default function App() {
     const lines = [
       '# Stickers Copa 26',
       '',
-      `Exportado em: ${new Date().toLocaleDateString()}`,
+      `Exportado em: ${formatBrazilianDate(new Date())}`,
       '',
       '## Coleção',
       '### Especiais',
