@@ -54,14 +54,21 @@ const sanitizeCollection = (value: unknown): Collection => {
 const parseMarkdownCollection = (content: string): Collection | null => {
   const lines = content.split(/\r?\n/);
   const parsed = lines.reduce<Collection>((acc, line) => {
-    const match = line.trim().match(/^[-*]\s*([A-Za-z0-9_-]+)\s*:\s*(\d+)$/);
-    if (!match) return acc;
+    const bullet = line.trim();
+    if (!/^[-*]\s+/.test(bullet)) return acc;
 
-    const [, id, countText] = match;
-    const count = Number(countText);
-    if (Number.isFinite(count) && count > 0) {
-      acc[id] = Math.floor(count);
-    }
+    const contentLine = bullet.replace(/^[-*]\s+/, '');
+    const matches = [...contentLine.matchAll(/([A-Za-z0-9_-]+)\s*:\s*(\d+)/g)];
+    if (matches.length === 0) return acc;
+
+    matches.forEach((match) => {
+      const [, id, countText] = match;
+      const count = Number(countText);
+      if (Number.isFinite(count) && count > 0) {
+        acc[id] = Math.floor(count);
+      }
+    });
+
     return acc;
   }, {});
 
@@ -92,6 +99,19 @@ const normalizeImportedCollection = (raw: string): Collection | null => {
   }
 
   return parseMarkdownCollection(trimmed);
+};
+
+const formatCollectionLine = (label: string, stickers: Sticker[], collection: Collection) => {
+  const entries = stickers
+    .map((sticker) => ({
+      id: sticker.id,
+      count: collection[sticker.id] || 0,
+    }))
+    .filter(({ count }) => count > 0);
+
+  if (entries.length === 0) return null;
+
+  return `- ${label}: ${entries.map(({ id, count }) => `${id}: ${count}`).join(', ')}`;
 };
 
 export default function App() {
@@ -746,8 +766,8 @@ export default function App() {
   };
 
   const exportMarkdownData = () => {
-    const items = Object.entries(sanitizeCollection(collection));
-    if (items.length === 0) {
+    const normalizedCollection = sanitizeCollection(collection);
+    if (Object.keys(normalizedCollection).length === 0) {
       showToast("Sua coleção está vazia.");
       return;
     }
@@ -758,7 +778,27 @@ export default function App() {
       `Exportado em: ${new Date().toLocaleDateString()}`,
       '',
       '## Coleção',
-      ...items.map(([id, count]) => `- ${id}: ${count}`),
+      '### Especiais',
+      ...SPECIALS.map((special) => {
+        const stickers = allStickers.filter(
+          (sticker) => sticker.isSpecial && sticker.specialSection === special.name
+        );
+        return formatCollectionLine(special.name, stickers, normalizedCollection);
+      }).filter((line): line is string => Boolean(line)),
+      '',
+      '### Legends',
+      ...LEGENDS_PLAYERS.map((player) => {
+        const stickers = allStickers.filter(
+          (sticker) => sticker.teamCode === 'EXTRA' && sticker.teamName === player.name
+        );
+        return formatCollectionLine(player.name, stickers, normalizedCollection);
+      }).filter((line): line is string => Boolean(line)),
+      '',
+      '### Seleções',
+      ...GROUPS.flatMap((group) => group.teams.map((team) => {
+        const stickers = allStickers.filter((sticker) => sticker.teamCode === team.code);
+        return formatCollectionLine(`Grupo ${group.name} - ${team.name}`, stickers, normalizedCollection);
+      })).filter((line): line is string => Boolean(line)),
       '',
     ];
 
