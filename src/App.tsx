@@ -1878,34 +1878,48 @@ export default function App() {
                         const progress = officialStats.total > 0 ? officialStats.collected / officialStats.total : 0;
                         const unlocked = index === 0 ? officialStats.collected >= 1 : progress >= required;
                         const requiredLabel = index === 0 ? '1 figura' : `${Math.round(required * 100)}%`;
+                        const tooltipText = index === 0
+                          ? 'Conquiste ao cadastrar a primeira figurinha.'
+                          : index === 1
+                            ? 'Conquiste ao atingir 25% da coleção.'
+                            : 'Conquiste ao atingir 50% da coleção.';
                         const label = unlocked ? `Baixar ${index + 1}` : `Bloqueado ${index + 1}`;
 
                         return (
-                      <button
-                        key={url}
-                        type="button"
-                        onClick={() => handleWallpaperAction(url, index)}
-                        disabled={!unlocked}
-                        className={`relative flex flex-col items-center justify-center gap-2 rounded-2xl border-2 py-4 transition-all ${
-                          unlocked
-                            ? 'border-fifa-slate-100 bg-fifa-slate-50 hover:border-fifa-primary'
-                            : 'border-fifa-slate-100 bg-fifa-slate-50/70 opacity-60 grayscale cursor-not-allowed'
-                        }`}
-                      >
-                        <div className="h-12 w-12 overflow-hidden rounded-xl bg-white shadow-sm">
-                          <img
-                            src={url}
-                            alt={`Wallpaper ${index + 1}`}
-                            className={`h-full w-full object-cover ${unlocked ? '' : 'blur-[1px]'}`}
-                          />
-                        </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
+                      <div key={url} className="relative group">
+                        <button
+                          type="button"
+                          onClick={() => handleWallpaperAction(url, index)}
+                          disabled={!unlocked}
+                          className={`relative flex w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 py-4 transition-all ${
+                            unlocked
+                              ? 'border-fifa-slate-100 bg-fifa-slate-50 hover:border-fifa-primary'
+                              : 'border-fifa-slate-100 bg-fifa-slate-50/70 opacity-60 grayscale cursor-not-allowed'
+                          }`}
+                        >
+                          <div className="h-12 w-12 overflow-hidden rounded-xl bg-white shadow-sm">
+                            <img
+                              src={url}
+                              alt={`Wallpaper ${index + 1}`}
+                              className={`h-full w-full object-cover ${unlocked ? '' : 'blur-[1px]'}`}
+                            />
+                          </div>
+                          <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
+                          {!unlocked && (
+                            <span className="absolute right-2 top-2 rounded-full bg-[#8b0000] px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.25em] text-white shadow-lg">
+                              {requiredLabel}
+                            </span>
+                          )}
+                        </button>
                         {!unlocked && (
-                          <span className="absolute right-2 top-2 rounded-full bg-[#8b0000] px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.25em] text-white shadow-lg">
-                            {requiredLabel}
-                          </span>
+                          <div className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 w-40 -translate-x-1/2 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
+                            <div className="rounded-2xl border border-[#8b0000]/20 bg-[#8b0000] px-3 py-2 text-center text-[10px] font-black uppercase tracking-[0.18em] text-white shadow-2xl">
+                              {tooltipText}
+                            </div>
+                            <div className="mx-auto -mt-1 h-3 w-3 rotate-45 bg-[#8b0000] border-l border-t border-[#8b0000]/20" />
+                          </div>
                         )}
-                      </button>
+                      </div>
                         );
                       })()
                     ))}
