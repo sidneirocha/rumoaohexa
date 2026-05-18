@@ -246,6 +246,7 @@ export default function App() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [importText, setImportText] = useState('');
   const [showWallpaperUnlock, setShowWallpaperUnlock] = useState<number | null>(null);
+  const [activeWallpaperTooltip, setActiveWallpaperTooltip] = useState<number | null>(null);
 
   const scrollToSection = (id: string) => {
     const el = document.getElementById(id);
@@ -343,6 +344,10 @@ export default function App() {
     setShowWallpaperUnlock(null);
   };
 
+  const showWallpaperTooltip = (index: number) => {
+    setActiveWallpaperTooltip(index);
+  };
+
   const reopenTutorial = () => {
     setShowSettings(false);
     setShowTutorial(true);
@@ -412,6 +417,16 @@ export default function App() {
     setShowWallpaperUnlock(null);
     void handleWallpaperAction(loadingImages[index], index);
   };
+
+  useEffect(() => {
+    if (activeWallpaperTooltip === null) return;
+
+    const timer = window.setTimeout(() => {
+      setActiveWallpaperTooltip(null);
+    }, 2400);
+
+    return () => window.clearTimeout(timer);
+  }, [activeWallpaperTooltip]);
 
   useEffect(() => {
     localStorage.setItem('sticker-collection', JSON.stringify(collection));
@@ -1889,8 +1904,14 @@ export default function App() {
                       <div key={url} className="relative group">
                         <button
                           type="button"
-                          onClick={() => handleWallpaperAction(url, index)}
-                          disabled={!unlocked}
+                          onClick={() => {
+                            if (!unlocked) {
+                              showWallpaperTooltip(index);
+                              return;
+                            }
+                            handleWallpaperAction(url, index);
+                          }}
+                          aria-disabled={!unlocked}
                           className={`relative flex w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 py-4 transition-all ${
                             unlocked
                               ? 'border-fifa-slate-100 bg-fifa-slate-50 hover:border-fifa-primary'
@@ -1912,12 +1933,22 @@ export default function App() {
                           )}
                         </button>
                         {!unlocked && (
-                          <div className="pointer-events-none absolute left-1/2 bottom-full z-20 mb-2 w-40 -translate-x-1/2 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
-                            <div className="rounded-2xl border border-[#8b0000]/20 bg-[#8b0000] px-3 py-2 text-center text-[10px] font-black uppercase tracking-[0.18em] text-white shadow-2xl">
-                              {tooltipText}
+                          <>
+                            <div className="pointer-events-none absolute left-1/2 bottom-full z-20 mb-2 hidden w-40 -translate-x-1/2 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100 md:block">
+                              <div className="rounded-2xl border border-[#8b0000]/20 bg-[#8b0000] px-3 py-2 text-center text-[10px] font-black uppercase tracking-[0.18em] text-white shadow-2xl">
+                                {tooltipText}
+                              </div>
+                              <div className="mx-auto -mb-1 h-3 w-3 rotate-45 bg-[#8b0000] border-r border-b border-[#8b0000]/20" />
                             </div>
-                            <div className="mx-auto -mb-1 h-3 w-3 rotate-45 bg-[#8b0000] border-r border-b border-[#8b0000]/20" />
-                          </div>
+                            <div className={`pointer-events-none absolute left-1/2 bottom-full z-20 mb-2 w-44 -translate-x-1/2 transition-all duration-200 md:hidden ${
+                              activeWallpaperTooltip === index ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'
+                            }`}>
+                              <div className="rounded-2xl border border-[#8b0000]/20 bg-[#8b0000] px-3 py-2 text-center text-[10px] font-black uppercase tracking-[0.18em] text-white shadow-2xl">
+                                {tooltipText}
+                              </div>
+                              <div className="mx-auto -mb-1 h-3 w-3 rotate-45 bg-[#8b0000] border-r border-b border-[#8b0000]/20" />
+                            </div>
+                          </>
                         )}
                       </div>
                         );
