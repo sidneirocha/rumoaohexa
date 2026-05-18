@@ -892,7 +892,7 @@ export default function App() {
                 <div className="h-8 rounded-xl bg-fifa-slate-100 flex items-center px-3 text-fifa-primary/25 text-xs font-bold">Busque...</div>
               </div>
               <div className="grid grid-cols-3 gap-2">
-                {['Especiais', 'Legends', 'Times'].map((item) => (
+                {['Especiais', 'Legends', 'Seleções'].map((item) => (
                   <div key={item} className="rounded-xl bg-white border border-fifa-slate-100 px-3 py-2 text-center text-[10px] font-black uppercase tracking-widest text-fifa-primary">
                     {item}
                   </div>
@@ -1170,7 +1170,7 @@ export default function App() {
             <nav className="flex items-center justify-center gap-1.5 md:gap-2 w-full md:w-auto">
               <NavButton label="Especiais" onClick={() => scrollToSection('especiais')} />
               <NavButton label="Legends" onClick={() => scrollToSection('legends')} />
-              <NavButton label="Times" onClick={() => scrollToSection('times-list')} />
+              <NavButton label="Seleções" onClick={() => scrollToSection('times-list')} />
             </nav>
             
             <div className="flex items-center gap-1.5 w-full md:w-auto md:ml-auto">
@@ -1290,13 +1290,13 @@ export default function App() {
             <div className="lg:col-span-2 xl:col-span-3 space-y-12">
               {/* Legends Section Spanning Horizontal */}
               <div id="legends" className="space-y-6">
-              <div className="bg-gradient-to-r from-[#6e001c] via-[#8b0000] to-[#6a0dad] rounded-3xl p-6 md:p-8 text-white shadow-xl overflow-hidden relative">
-                <div className="absolute top-0 right-0 w-64 h-full bg-fifa-accent rounded-full translate-x-1/2 opacity-10 blur-3xl" />
+              <div className="bg-gradient-to-r from-[#fedf00] via-[#f5b800] to-[#fff176] rounded-3xl p-6 md:p-8 text-fifa-primary shadow-xl overflow-hidden relative border border-[#f5b800]/20">
+                <div className="absolute top-0 right-0 w-64 h-full bg-white rounded-full translate-x-1/2 opacity-20 blur-3xl" />
                 <div className="relative z-10 flex items-center justify-between gap-4">
                   <div>
-                    <h2 className="text-2xl md:text-3xl font-black uppercase leading-tight italic">Legends Extra</h2>
+                    <h2 className="text-2xl md:text-3xl font-black uppercase leading-tight italic text-fifa-primary">Legends Extra</h2>
                   </div>
-                  <div className="bg-white/20 px-3 py-1.5 rounded-2xl text-[10px] md:text-xs font-black backdrop-blur-md border border-white/10 italic shrink-0 whitespace-nowrap">
+                  <div className="bg-white/70 px-3 py-1.5 rounded-2xl text-[10px] md:text-xs font-black backdrop-blur-md border border-fifa-primary/10 italic shrink-0 whitespace-nowrap text-fifa-primary">
                     {allStickers.filter(s => s.teamCode === 'EXTRA' && (collection[s.id] || 0) > 0).length} / 80
                   </div>
                 </div>
@@ -1338,6 +1338,17 @@ export default function App() {
 
               {/* Groups grid */}
               <div id="times-list" className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start content-start">
+                <div className="xl:col-span-2 bg-gradient-to-r from-[#009b3a] via-[#1fb14b] to-[#7bdc68] rounded-3xl p-6 md:p-8 text-white shadow-xl overflow-hidden relative border border-white/10">
+                  <div className="absolute top-0 right-0 w-64 h-full bg-white rounded-full translate-x-1/2 opacity-10 blur-3xl" />
+                  <div className="relative z-10 flex items-center justify-between gap-4">
+                    <div>
+                      <h2 className="text-2xl md:text-3xl font-black uppercase leading-tight italic">Seleções</h2>
+                    </div>
+                    <div className="bg-white/20 px-3 py-1.5 rounded-2xl text-[10px] md:text-xs font-black backdrop-blur-md border border-white/10 italic shrink-0 whitespace-nowrap">
+                      {GROUPS.length} grupos
+                    </div>
+                  </div>
+                </div>
                 {GROUPS.map((group) => {
                 const groupStickers = allStickers.filter(s => s.group === group.name);
                 const filteredGroupStickers = getFilteredStickers(groupStickers);
