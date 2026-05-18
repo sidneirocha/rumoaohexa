@@ -823,7 +823,7 @@ export default function App() {
   const tutorialSlides = [
     {
       title: 'Busque',
-      description: 'Veja o fluxo principal em um carrossel rápido, com prints simulados do aplicativo em cada etapa.',
+      description: 'Digite o nome do time, jogador ou código para encontrar a figurinha rapidamente no app.',
       accent: 'from-[#002772] to-[#1b4fb8]',
     },
     {
