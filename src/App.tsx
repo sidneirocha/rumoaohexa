@@ -1338,6 +1338,15 @@ export default function App() {
 
               {/* Groups grid */}
               <div id="times-list" className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start content-start">
+                {(() => {
+                  const totalSelectionsCount = GROUPS.reduce((sum, group) => {
+                    return sum + allStickers.filter((s) => s.group === group.name).length;
+                  }, 0);
+                  const collectedSelectionsCount = GROUPS.reduce((sum, group) => {
+                    return sum + allStickers.filter((s) => s.group === group.name && (collection[s.id] || 0) > 0).length;
+                  }, 0);
+
+                  return (
                 <div className="xl:col-span-2 bg-gradient-to-r from-[#009b3a] via-[#1fb14b] to-[#7bdc68] rounded-3xl h-[92px] md:h-[104px] px-6 md:px-8 text-white shadow-xl overflow-hidden relative border border-white/10 flex items-center">
                   <div className="absolute top-0 right-0 w-64 h-full bg-white rounded-full translate-x-1/2 opacity-10 blur-3xl" />
                   <div className="relative z-10 flex items-center justify-between gap-4">
@@ -1345,10 +1354,12 @@ export default function App() {
                       <h2 className="text-xl md:text-2xl font-black uppercase leading-tight italic">Seleções</h2>
                     </div>
                     <div className="bg-white/20 px-3 py-1.5 rounded-2xl text-[10px] md:text-xs font-black backdrop-blur-md border border-white/10 italic shrink-0 whitespace-nowrap">
-                      {GROUPS.length} / {GROUPS.length}
+                      {collectedSelectionsCount} / {totalSelectionsCount}
                     </div>
                   </div>
                 </div>
+                  );
+                })()}
                 {GROUPS.map((group) => {
                 const groupStickers = allStickers.filter(s => s.group === group.name);
                 const filteredGroupStickers = getFilteredStickers(groupStickers);
