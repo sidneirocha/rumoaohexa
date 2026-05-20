@@ -121,7 +121,7 @@ const formatBrazilianDate = (date: Date) => {
   return `${day}/${month}/${year}`;
 };
 
-const SOURCE_LINK = 'https://sidneirocha.github.io/stickerscopa26/docs';
+const SOURCE_LINK = 'https://stickerscopa.com.br/';
 
 const normalizeSearchText = (value: string) =>
   value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
