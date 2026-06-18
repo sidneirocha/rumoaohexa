@@ -635,7 +635,7 @@ export default function App() {
 
   const buildTradeEntries = (type: 'missing' | 'duplicates') => {
     const relevant = type === 'missing'
-      ? allStickers.filter(s => (collection[s.id] || 0) === 0)
+      ? allStickers.filter((s) => s.teamCode !== 'EXTRA' && (collection[s.id] || 0) === 0)
       : allStickers.filter(s => (collection[s.id] || 0) > 1);
 
     const grouped = Object.entries(
@@ -1357,56 +1357,8 @@ export default function App() {
               </div>
             </div>
 
-            {/* Main Content Area: Legends then Groups */}
+            {/* Main Content Area: Groups then Legends */}
             <div className="lg:col-span-2 xl:col-span-3 space-y-12">
-              {/* Legends Section Spanning Horizontal */}
-              <div id="legends" className="space-y-6">
-              <div className="bg-gradient-to-r from-[#fedf00] via-[#f5b800] to-[#fff176] rounded-3xl h-[92px] md:h-[104px] px-6 md:px-8 text-fifa-primary shadow-xl overflow-hidden relative border border-[#f5b800]/20 flex items-center">
-                <div className="absolute top-0 right-0 w-64 h-full bg-white rounded-full translate-x-1/2 opacity-20 blur-3xl" />
-                <div className="relative z-10 flex w-full items-center gap-4">
-                  <div className="min-w-0 flex-1">
-                    <h2 className="text-xl md:text-2xl font-black uppercase leading-tight italic text-fifa-primary">Legends Extra</h2>
-                  </div>
-                  <div className="ml-auto bg-white/70 px-3 py-1.5 rounded-2xl text-[10px] md:text-xs font-black backdrop-blur-md border border-fifa-primary/10 italic shrink-0 whitespace-nowrap text-fifa-primary">
-                    {allStickers.filter(s => s.teamCode === 'EXTRA' && (collection[s.id] || 0) > 0).length} / 80
-                  </div>
-                </div>
-              </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4">
-                  {LEGENDS_PLAYERS.map(player => {
-                    const stickers = getFilteredStickers(allStickers.filter(s => s.teamName === player.name && s.teamCode === 'EXTRA'));
-                    if (stickers.length === 0 && filter !== 'all') return null;
-
-                    const collectedCount = stickers.filter(s => (collection[s.id] || 0) > 0).length;
-                    const totalCount = stickers.length;
-
-                    return (
-                      <Accordion 
-                        key={player.code}
-                        title={player.name}
-                        subtitle={`${collectedCount} DE ${totalCount}`}
-                        completed={totalCount > 0 && collectedCount === totalCount}
-                        isOpen={activeGroup === player.code}
-                        onToggle={() => openGroup(player.code)}
-                      >
-                        <div className="grid grid-cols-4 gap-2 p-3 md:p-4 bg-white rounded-b-3xl md:border-x md:border-b border-fifa-slate-200">
-                          {stickers.map(s => (
-                            <StickerButton 
-                              key={s.id}
-                              sticker={s}
-                              count={collection[s.id] || 0}
-                              onAdd={() => updateStickerCount(s.id, 1)}
-                              onRemove={() => updateStickerCount(s.id, -1)}
-                            />
-                          ))}
-                        </div>
-                      </Accordion>
-                    );
-                  })}
-                </div>
-              </div>
-
               {/* Groups grid */}
               <div id="times-list" className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start content-start">
                 {(() => {
@@ -1507,6 +1459,54 @@ export default function App() {
                   </div>
                 );
               })}
+
+              {/* Legends Section Spanning Horizontal */}
+              <div id="legends" className="space-y-6">
+                <div className="bg-gradient-to-r from-[#fedf00] via-[#f5b800] to-[#fff176] rounded-3xl h-[92px] md:h-[104px] px-6 md:px-8 text-fifa-primary shadow-xl overflow-hidden relative border border-[#f5b800]/20 flex items-center">
+                  <div className="absolute top-0 right-0 w-64 h-full bg-white rounded-full translate-x-1/2 opacity-20 blur-3xl" />
+                  <div className="relative z-10 flex w-full items-center gap-4">
+                    <div className="min-w-0 flex-1">
+                      <h2 className="text-xl md:text-2xl font-black uppercase leading-tight italic text-fifa-primary">Legends Extra</h2>
+                    </div>
+                    <div className="ml-auto bg-white/70 px-3 py-1.5 rounded-2xl text-[10px] md:text-xs font-black backdrop-blur-md border border-fifa-primary/10 italic shrink-0 whitespace-nowrap text-fifa-primary">
+                      {allStickers.filter(s => s.teamCode === 'EXTRA' && (collection[s.id] || 0) > 0).length} / 80
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4">
+                  {LEGENDS_PLAYERS.map(player => {
+                    const stickers = getFilteredStickers(allStickers.filter(s => s.teamName === player.name && s.teamCode === 'EXTRA'));
+                    if (stickers.length === 0 && filter !== 'all') return null;
+
+                    const collectedCount = stickers.filter(s => (collection[s.id] || 0) > 0).length;
+                    const totalCount = stickers.length;
+
+                    return (
+                      <Accordion
+                        key={player.code}
+                        title={player.name}
+                        subtitle={`${collectedCount} DE ${totalCount}`}
+                        completed={totalCount > 0 && collectedCount === totalCount}
+                        isOpen={activeGroup === player.code}
+                        onToggle={() => openGroup(player.code)}
+                      >
+                        <div className="grid grid-cols-4 gap-2 p-3 md:p-4 bg-white rounded-b-3xl md:border-x md:border-b border-fifa-slate-200">
+                          {stickers.map(s => (
+                            <StickerButton
+                              key={s.id}
+                              sticker={s}
+                              count={collection[s.id] || 0}
+                              onAdd={() => updateStickerCount(s.id, 1)}
+                              onRemove={() => updateStickerCount(s.id, -1)}
+                            />
+                          ))}
+                        </div>
+                      </Accordion>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
         </div>
