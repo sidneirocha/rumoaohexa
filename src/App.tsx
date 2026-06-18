@@ -332,7 +332,7 @@ export default function App() {
 
   const prepareExport = (type: 'missing' | 'duplicates') => {
     const relevant = type === 'missing' 
-      ? allStickers.filter(s => (collection[s.id] || 0) === 0)
+      ? allStickers.filter((s) => s.teamCode !== 'EXTRA' && s.teamCode !== 'CC' && (collection[s.id] || 0) === 0)
       : allStickers.filter(s => (collection[s.id] || 0) > 1);
 
     if (relevant.length === 0) {
@@ -635,7 +635,7 @@ export default function App() {
 
   const buildTradeEntries = (type: 'missing' | 'duplicates') => {
     const relevant = type === 'missing'
-      ? allStickers.filter((s) => s.teamCode !== 'EXTRA' && (collection[s.id] || 0) === 0)
+      ? allStickers.filter((s) => s.teamCode !== 'EXTRA' && s.teamCode !== 'CC' && (collection[s.id] || 0) === 0)
       : allStickers.filter(s => (collection[s.id] || 0) > 1);
 
     const grouped = Object.entries(
@@ -1830,7 +1830,7 @@ export default function App() {
                     Lista de {exportPreview.type === 'missing' ? 'Faltantes' : 'Trocas'}
                   </h3>
                   <p className="text-[10px] md:text-xs font-bold text-fifa-primary/40 uppercase tracking-[0.2em] mt-1">
-                    {exportPreview.stickers.length} figurinhas encontradas
+                    {buildTradeEntries(exportPreview.type).totalDisplay} figurinhas encontradas
                   </p>
                 </div>
                 <button 
